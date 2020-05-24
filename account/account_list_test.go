@@ -29,7 +29,7 @@ func TestLoadAccountFromFile(t *testing.T) {
 			},
 			want: List{
 				Accounts: map[string]string{"@hayashiki": "<@U021G3CDSJP>"},
-				Repos: map[string]string{"hayashiki/gcp-functions-fw": "https://hooks.slack.com/services/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"},
+				Repos:    map[string]string{"hayashiki/gcp-functions-fw": "https://hooks.slack.com/services/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"},
 			},
 		},
 	}

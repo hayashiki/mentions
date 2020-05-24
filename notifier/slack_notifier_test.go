@@ -20,10 +20,10 @@ func TestSlackNotifier_Notify(t *testing.T) {
 	type args struct {
 		payload *PostMessageRequest
 	}
-	tests := []struct{
-		name string
+	tests := []struct {
+		name   string
 		fields fields
-		args args
+		args   args
 	}{
 		{
 			name: "simple",
@@ -32,7 +32,7 @@ func TestSlackNotifier_Notify(t *testing.T) {
 			},
 			args: args{
 				&PostMessageRequest{
-					Text: "text",
+					Text:      "text",
 					LinkNames: "1",
 				},
 			},
