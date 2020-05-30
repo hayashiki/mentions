@@ -1,10 +1,11 @@
-package mentions
+package main
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/hayashiki/mentions/account"
 	"github.com/hayashiki/mentions/config"
 	"github.com/hayashiki/mentions/gh"
+	"github.com/hayashiki/mentions/handler"
 	"github.com/hayashiki/mentions/notifier"
 	"log"
 )
@@ -19,14 +20,13 @@ func main() {
 	}
 
 	gVerifier := gh.NewGithubVerifier()
-	sNotifier := notifier.NewSlackNotifier()
+	sNotifier := notifier.NewSlackNotifier(list)
+	githubWebhookController := handler.NewWebhookHandler(gVerifier, sNotifier, env, list)
 
-	githubWebhookController := gh.NewWebhookHandler(gVerifier, sNotifier, env, list)
-
-	r := gin.New()
-	//r.Use(gin.Recovery(), Log())
-
+	r := gin.Default()
+	r.Use(gin.Recovery())
 
 	g := r.Group("/webhook")
 	g.POST("/github", func(c *gin.Context) { githubWebhookController.PostWebhook(c) })
+	r.Run()
 }

@@ -2,11 +2,12 @@ package notifier
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hayashiki/mentions/account"
-	"github.com/hayashiki/mentions/gh"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -23,9 +24,9 @@ type SlackNotifier struct {
 	AccountList account.List
 }
 
-func NewSlackNotifier() *SlackNotifier {
+func NewSlackNotifier(list account.List) *SlackNotifier {
 	return &SlackNotifier{
-		//WebhookURL: webhookURL,
+		AccountList: list,
 	}
 }
 
@@ -34,15 +35,23 @@ type PostMessageRequest struct {
 	LinkNames string `json:"link_names,omitempty"`
 }
 
-func (n *SlackNotifier) Notify(event *gh.Event, webhookURL string) error {
+func (n *SlackNotifier) Notify(webhookURL, message string) error {
 
-	message := n.generateMessage(event)
 	message, ok := n.toMentionCommentBody(message)
 	if !ok {
 		return nil
 	}
-	//body, err := json.Marshal(event)
-	req, _ := http.NewRequest(http.MethodPost, webhookURL, bytes.NewReader([]byte(message)))
+
+	log.Printf("calll slack %v", account.List{})
+	log.Printf("calll slack %v", n.AccountList)
+
+	pm := PostMessageRequest{
+		Text: message,
+		LinkNames: "1",
+	}
+
+	body, err := json.Marshal(pm)
+	req, _ := http.NewRequest(http.MethodPost, webhookURL, bytes.NewReader([]byte(body)))
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -59,14 +68,14 @@ func (n *SlackNotifier) Notify(event *gh.Event, webhookURL string) error {
 	return nil
 }
 
-func (n *SlackNotifier) generateMessage(event *gh.Event) string {
-	var text string
-	text = fmt.Sprintf("%v *【%v】%v* \n", text, event.Repository, event.Title)
-	text = fmt.Sprintf("%v%v\n", text, event.HTMLURL)
-	text = fmt.Sprintf("%v>Comment created by: %v\n", text, event.User)
-	text = fmt.Sprintf("%v\n%v\n", text, event.Comment)
-	return text
-}
+//func (n *SlackNotifier) generateMessage(event *gh.Event) string {
+//	var text string
+//	text = fmt.Sprintf("%v *【%v】%v* \n", text, event.Repository, event.Title)
+//	text = fmt.Sprintf("%v%v\n", text, event.HTMLURL)
+//	text = fmt.Sprintf("%v>Comment created by: %v\n", text, event.User)
+//	text = fmt.Sprintf("%v\n%v\n", text, event.Comment)
+//	return text
+//}
 
 func (n *SlackNotifier) toMention(slackName string) string {
 	name := n.AccountList.Accounts[slackName]
@@ -86,6 +95,7 @@ func (n *SlackNotifier) toMentionCommentBody(comment string) (string, bool) {
 	}
 	for _, val := range matches {
 		slackName, _ := n.AccountList.Accounts[val[0]]
+		log.Printf("slackName %v", slackName)
 		comment = strings.Replace(comment, val[0], slackName, -1)
 	}
 	return comment, true

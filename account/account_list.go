@@ -6,9 +6,12 @@ import (
 )
 
 type List struct {
-	Accounts map[string]string `json:"accounts"`
-	Repos    map[string]string `json:"repos"`
+	Accounts Accounts `json:"accounts"`
+	Repos    Repos `json:"repos"`
 }
+
+type Accounts map[string]string
+type Repos    map[string]string
 
 func LoadAccountFromFile(filename string) (List, error) {
 
