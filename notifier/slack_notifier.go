@@ -15,10 +15,6 @@ import (
 
 var r = regexp.MustCompile(`@[a-zA-Z0-9_\-\.]+`)
 
-//import (
-//	"github.com/slack-go/slack"
-//)
-
 type SlackNotifier struct {
 	WebhookURL  string
 	AccountList account.List
@@ -41,9 +37,6 @@ func (n *SlackNotifier) Notify(webhookURL, message string) error {
 	if !ok {
 		return nil
 	}
-
-	log.Printf("calll slack %v", account.List{})
-	log.Printf("calll slack %v", n.AccountList)
 
 	pm := PostMessageRequest{
 		Text: message,
@@ -68,14 +61,6 @@ func (n *SlackNotifier) Notify(webhookURL, message string) error {
 	return nil
 }
 
-//func (n *SlackNotifier) generateMessage(event *gh.Event) string {
-//	var text string
-//	text = fmt.Sprintf("%v *【%v】%v* \n", text, event.Repository, event.Title)
-//	text = fmt.Sprintf("%v%v\n", text, event.HTMLURL)
-//	text = fmt.Sprintf("%v>Comment created by: %v\n", text, event.User)
-//	text = fmt.Sprintf("%v\n%v\n", text, event.Comment)
-//	return text
-//}
 
 func (n *SlackNotifier) toMention(slackName string) string {
 	name := n.AccountList.Accounts[slackName]

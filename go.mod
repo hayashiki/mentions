@@ -10,5 +10,5 @@ require (
 	github.com/jarcoal/httpmock v1.0.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/text v0.3.2
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )

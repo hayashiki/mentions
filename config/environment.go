@@ -8,6 +8,7 @@ import (
 
 type Environment struct {
 	GithubWebhookSecret string `envconfig:"GITHUB_WEBHOOK_SECRET" required:"true"`
+	GithubSecretToken string `envconfig:"GITHUB_SECRET_TOKEN" required:"true"`
 }
 
 func getProductionEnv() Environment {
