@@ -1,6 +1,7 @@
 package notifier
 
 import (
+	"github.com/hayashiki/mentions/account"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -11,14 +12,15 @@ func TestSlackNotifier_Notify(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("POST", "https://hooks.slack.com/services/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",
-		httpmock.NewStringResponder(200, ""))
+		httpmock.NewStringResponder(200, `{}`))
 
 	type fields struct {
-		WebhookURL string
+		AccountList account.List
 	}
 
 	type args struct {
-		payload *PostMessageRequest
+		webhookURL string
+		message string
 	}
 	tests := []struct {
 		name   string
@@ -28,22 +30,20 @@ func TestSlackNotifier_Notify(t *testing.T) {
 		{
 			name: "simple",
 			fields: fields{
-				WebhookURL: "https://hooks.slack.com/services/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",
+				AccountList: account.List{},
 			},
 			args: args{
-				&PostMessageRequest{
-					Text:      "text",
-					LinkNames: "1",
-				},
+				webhookURL: "https://hooks.slack.com/services/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",
+				message: "message <@hayashiki>",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := &SlackNotifier{
-				WebhookURL: tt.fields.WebhookURL,
+				AccountList: tt.fields.AccountList,
 			}
-			err := n.Notify(tt.args.payload)
+			err := n.Notify(tt.args.webhookURL, tt.args.message)
 			assert.NoError(t, err)
 		})
 	}

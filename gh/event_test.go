@@ -15,21 +15,6 @@ import (
 	"testing"
 )
 
-//func TestWebhook_ParsePayloadHandler(t *testing.T) {
-//	g := gin.New()
-//	//buf := new(strings.Builder)
-//
-//	req := httptest.NewRequest(http.MethodPost, "/", nil)
-//	rec := httptest.NewRecorder()
-//
-//	hook := NewWebhookHandler()
-//
-//	g.POST("/", hook.githubEventHandler)
-//	g.ServeHTTP(rec, req)
-//
-//	assert.Equal(t, http.StatusMethodNotAllowed, rec.Code)
-//}
-
 func TestFindWebhookURL(t *testing.T) {
 	var list account.List
 	var event *Event

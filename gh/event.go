@@ -10,16 +10,17 @@ import (
 	"strings"
 )
 
-func FindWebhookURL(event *Event, list account.List) (string, error){
-	url := list.Repos[event.Repository.FullName()]
-	log.Printf("url is %v", url)
-	return "", nil
-}
+//func FindWebhookURL(event *Event, list account.List) (string, error){
+//	url := list.Repos[event.Repository.FullName()]
+//	log.Printf("url is %v", url)
+//	return "", nil
+//}
 
 // Event is the internal structure used for an event
 type Event struct {
 	Action      string
 	IssueNumber int
+	IssueOwner  string
 	CommentID   int64
 	Repository  Repository
 	User        string
@@ -35,11 +36,12 @@ type Event struct {
 type Repository struct {
 	Owner string
 	Name  string
+	FullName string
 }
 
-func(r Repository) FullName() string{
-	return r.Owner + "/" + r.Name
-}
+//func(r Repository) FullName() string{
+//	return r.Owner + "/" + r.Name
+//}
 
 type EventType int
 
@@ -51,13 +53,17 @@ const (
 
 func ConvertIssueCommentEvent(original *github.IssueCommentEvent) *Event {
 
+	log.Printf("Event Issue debug %s", original.Issue.GetUser().GetName())
+	log.Printf("Event Issue debug %s", original.Issue.GetUser().GetLogin())
 	return &Event{
 		IssueNumber: original.Issue.GetNumber(),
+		IssueOwner: original.Issue.GetUser().GetLogin(),
 		Title:       original.Issue.GetTitle(),
 		Action:      original.GetAction(),
 		Repository: Repository{
-			Owner: original.Repo.Owner.GetLogin(),
+			Owner: original.Repo.GetOwner().GetLogin(),
 			Name: original.Repo.GetName(),
+			FullName: original.Repo.GetFullName(),
 		},
 		CommentID: original.Comment.GetID(),
 		User:        original.Comment.User.GetLogin(),
@@ -68,13 +74,18 @@ func ConvertIssueCommentEvent(original *github.IssueCommentEvent) *Event {
 }
 
 func ConvertPullRequestCommentEvent(original *github.PullRequestReviewCommentEvent) *Event {
+
+	log.Printf("Event PR debug %s", original.Repo.GetOwner().GetLogin())
+
 	return &Event{
 		IssueNumber: original.PullRequest.GetNumber(),
+		IssueOwner: original.PullRequest.GetUser().GetLogin(),
 		Title:       original.PullRequest.GetTitle(),
 		Action:      original.GetAction(),
 		Repository: Repository{
-			Owner: original.Repo.GetOwner().GetName(),
+			Owner: original.Repo.GetOwner().GetLogin(),
 			Name: original.Repo.GetName(),
+			FullName: original.Repo.GetFullName(),
 		},
 		CommentID: original.Comment.GetID(),
 		User:        original.Comment.User.GetLogin(),
@@ -86,7 +97,7 @@ func ConvertPullRequestCommentEvent(original *github.PullRequestReviewCommentEve
 
 func (event *Event) GenerateMessage() string {
 	var text string
-	text = fmt.Sprintf("%v *%v <%v|%v> * by: %v\n", text, event.Repository, event.HTMLURL, event.Title, event.User)
+	text = fmt.Sprintf("%v *%v <%v|%v> * by: %v\n", text, event.Repository.FullName, event.HTMLURL, event.Title, event.User)
 	text = fmt.Sprintf("%v\n%v\n", text, event.Comment)
 	return text
 }
@@ -99,11 +110,17 @@ func (event *Event) CreateReviewers(reviewers account.Reviewers) (error){
 
 	issueSvc := client.Issues
 
+	log.Printf("User is %s", event)
+	log.Printf("User is %s", fmt.Sprintf("@", event.IssueOwner))
+	revis := reviewers[fmt.Sprintf("@%s", event.IssueOwner)]
+
+	log.Printf("revis is %v", revis)
+
 	comment := new(github.IssueComment)
-	comment.Body = github.String(strings.Join(reviewers, ",") + " please review")
+	comment.Body = github.String(strings.Join(revis, " ") + " レビューお願いします😀")
 
 	var gReviewers []string
-	for _, reviewer := range reviewers {
+	for _, reviewer := range revis {
 		r := strings.Replace(reviewer, "@", "", 1)
 		if r != event.User {
 			gReviewers = append(gReviewers, r)

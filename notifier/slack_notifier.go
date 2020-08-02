@@ -16,7 +16,6 @@ import (
 var r = regexp.MustCompile(`@[a-zA-Z0-9_\-\.]+`)
 
 type SlackNotifier struct {
-	WebhookURL  string
 	AccountList account.List
 }
 
@@ -44,6 +43,7 @@ func (n *SlackNotifier) Notify(webhookURL, message string) error {
 	}
 
 	body, err := json.Marshal(pm)
+	log.Printf("hoge %s", webhookURL)
 	req, _ := http.NewRequest(http.MethodPost, webhookURL, bytes.NewReader([]byte(body)))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -72,8 +72,13 @@ func (n *SlackNotifier) toMention(slackName string) string {
 	return fmt.Sprintf("<@%s>", name)
 }
 
+func (n *SlackNotifier) ConvertMessage(message string) (ok bool, convertMessage string) {
+	return false, message
+}
+
 // ReplaceComment replace github account to slack
 func (n *SlackNotifier) toMentionCommentBody(comment string) (string, bool) {
+	return comment, true
 	matches := r.FindAllStringSubmatch(comment, -1)
 	if len(matches) == 0 {
 		return "", false

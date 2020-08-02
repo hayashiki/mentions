@@ -51,13 +51,18 @@ func (h *WebhookHandler) PostWebhook(c *gin.Context) {
 		return
 	}
 
+	if event.Action != "created" {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
 	if string([]rune(event.Comment)[:2]) == "r?" {
 		event.CreateReviewers(h.List.Reviewers)
 	}
 
 	//TODO handle not found
-	log.Printf("repo full %v", event.Repository.FullName())
-	url := h.List.Repos[event.Repository.FullName()]
+	log.Printf("repo full %v", event.Repository.FullName)
+	url := h.List.Repos[event.Repository.FullName]
 
 	log.Printf("url %v", url)
 
@@ -77,7 +82,7 @@ func (h WebhookHandler) ConvertGithubEvent(original interface{}) (*gh.Event, boo
 	case *github.IssueCommentEvent:
 		return gh.ConvertIssueCommentEvent(event), true
 	case *github.PullRequestReviewCommentEvent:
-		return gh.ConvertPullRequestCommentEvent(event), false
+		return gh.ConvertPullRequestCommentEvent(event), true
 	default:
 		return nil, false
 	}

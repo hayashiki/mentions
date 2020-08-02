@@ -13,7 +13,7 @@ type List struct {
 
 type Accounts map[string]string
 type Repos    map[string]string
-type Reviewers    []string
+type Reviewers    map[string][]string
 
 func LoadAccountFromFile(filename string) (List, error) {
 
