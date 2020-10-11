@@ -1,2 +1,4 @@
 .env.production
 github-config.json
+cmd/*
+bkup.md
