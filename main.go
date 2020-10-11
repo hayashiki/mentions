@@ -1,36 +1,51 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/hayashiki/mentions/account"
+	"fmt"
+	"github.com/go-chi/chi"
+	chiMiddleware "github.com/go-chi/chi/middleware"
 	"github.com/hayashiki/mentions/config"
-	"github.com/hayashiki/mentions/gh"
 	"github.com/hayashiki/mentions/handler"
+	"github.com/hayashiki/mentions/infrastructure"
 	"github.com/hayashiki/mentions/notifier"
+	"github.com/hayashiki/mentions/repository"
+	"github.com/hayashiki/mentions/usecase"
 	"github.com/hayashiki/mentions/utils"
-	"log"
 	"github.com/joho/godotenv"
+	"log"
+	"net/http"
+	"os"
 )
 
 func main() {
 	err := godotenv.Load(utils.LoadEnvVariable())
 
-	env := config.NewEnvironment("production")
-
-	list, err := account.LoadAccountFromFile("github-config.json")
 	if err != nil {
-		log.Printf(err.Error())
-		return
+		panic(err)
 	}
 
-	gVerifier := gh.NewGithubVerifier()
-	sNotifier := notifier.NewSlackNotifier(list)
-	githubWebhookController := handler.NewWebhookHandler(gVerifier, sNotifier, env, list)
+	env := config.NewEnvironment("production")
 
-	r := gin.Default()
-	r.Use(gin.Recovery())
+	ghSvc := repository.NewClient(infrastructure.NewClient(env.GithubSecretToken))
+	slackSvc := notifier.NewSlackNotifier()
+	taskRepo := repository.NewTaskRepository(infrastructure.GetDSClient(env.GCPProject))
 
-	g := r.Group("/webhook")
-	g.POST("/github", func(c *gin.Context) { githubWebhookController.PostWebhook(c) })
-	r.Run()
+	uc := usecase.NewWebhookProcess(env, ghSvc, slackSvc, taskRepo)
+
+	ghHandler := handler.NewWebhookHandler(uc)
+
+	r := chi.NewRouter()
+	r.Use(
+		chiMiddleware.Logger,
+		chiMiddleware.Recoverer,
+	)
+	r.Post("/webhook/github", ghHandler.PostWebhook)
+
+	port := os.Getenv("PORT")
+	if os.Getenv("PORT") == "" {
+		port = "8000"
+	}
+
+	log.Printf("connect to port:%s", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), r))
 }

@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hayashiki/mentions/account"
+	"github.com/hayashiki/mentions/model"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,14 +14,23 @@ import (
 
 var r = regexp.MustCompile(`@[a-zA-Z0-9_\-\.]+`)
 
-type SlackNotifier struct {
-	AccountList account.List
+type Notifier interface {
+	Notify(webhookURL, message string) error
+	ConvertComment(payload ConvertPayload, users []model.User) (convertMessage string, ok bool)
 }
 
-func NewSlackNotifier(list account.List) *SlackNotifier {
-	return &SlackNotifier{
-		AccountList: list,
-	}
+type SlackNotifier struct{}
+
+func NewSlackNotifier() Notifier {
+	return &SlackNotifier{}
+}
+
+type ConvertPayload struct {
+	Comment  string
+	RepoName string
+	HTMLURL  string
+	Title    string
+	User     string
 }
 
 type PostMessageRequest struct {
@@ -30,63 +38,74 @@ type PostMessageRequest struct {
 	LinkNames string `json:"link_names,omitempty"`
 }
 
+func (p ConvertPayload) buildMessage() string {
+	var text string
+	text = fmt.Sprintf("*%v <%v|%v> * by: %v", p.RepoName, p.HTMLURL, p.Title, p.User)
+	text = fmt.Sprintf("%v\n%v", text, p.Comment)
+	return text
+}
+
 func (n *SlackNotifier) Notify(webhookURL, message string) error {
 
-	message, ok := n.toMentionCommentBody(message)
-	if !ok {
-		return nil
-	}
-
 	pm := PostMessageRequest{
-		Text: message,
+		Text:      message,
 		LinkNames: "1",
 	}
 
 	body, err := json.Marshal(pm)
-	log.Printf("hoge %s", webhookURL)
-	req, _ := http.NewRequest(http.MethodPost, webhookURL, bytes.NewReader([]byte(body)))
+
+	if err != nil {
+		fmt.Errorf("failed to marshal to byte, err: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, webhookURL, bytes.NewReader([]byte(body)))
+
+	if err != nil {
+		fmt.Errorf("failed to create request, err: %w", err)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to send a http request, err: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read request body, err: %w", err)
+		}
 		return errors.New(string(b))
 	}
 	return nil
 }
 
-
-func (n *SlackNotifier) toMention(slackName string) string {
-	name := n.AccountList.Accounts[slackName]
-
-	if name == "" {
-		name = slackName
-	}
-
-	return fmt.Sprintf("<@%s>", name)
-}
-
-func (n *SlackNotifier) ConvertMessage(message string) (ok bool, convertMessage string) {
-	return false, message
-}
-
 // ReplaceComment replace github account to slack
-func (n *SlackNotifier) toMentionCommentBody(comment string) (string, bool) {
-	return comment, true
-	matches := r.FindAllStringSubmatch(comment, -1)
+func (n *SlackNotifier) ConvertComment(payload ConvertPayload, users []model.User) (convertMessage string, ok bool) {
+
+	ok = false
+	// eg. hello @hayashiki , I hava a question
+	matches := r.FindAllStringSubmatch(payload.Comment, -1)
+
 	if len(matches) == 0 {
-		return "", false
+		return payload.Comment, ok
 	}
+
 	for _, val := range matches {
-		slackName, _ := n.AccountList.Accounts[val[0]]
-		log.Printf("slackName %v", slackName)
-		comment = strings.Replace(comment, val[0], slackName, -1)
+		//eg. val[0] -> @hayashiki
+		for _, user := range users {
+			if user.GithubWithAt() == val[0] {
+				payload.Comment = strings.Replace(payload.Comment, val[0], user.SlackWithBracketAt(), -1)
+				ok = true
+			}
+		}
 	}
-	return comment, true
+
+	msg := payload.buildMessage()
+
+	return msg, ok
 }
+
