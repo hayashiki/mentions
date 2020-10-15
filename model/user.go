@@ -10,7 +10,7 @@ const UserKind = "users"
 type User struct {
 	ID        string
 	Workspace string
-	SlackID   string `json:"slack_id" datastore:"slack_id"`
+	SlackID   string   `json:"slack_id" datastore:"slack_id"`
 	GithubID  GithubID `json:"github_id" datastore:"github_id"`
 	Reviewers Reviewers
 	CreatedAt time.Time `datastore:"created_at,noindex"`
@@ -21,11 +21,11 @@ type UserID int64
 
 type GithubID string
 
-func (g GithubID) String() string{
+func (g GithubID) String() string {
 	return string(g)
 }
 
-func (g GithubID) WithAt() string{
+func (g GithubID) WithAt() string {
 	return fmt.Sprintf("@%s", g.String())
 }
 

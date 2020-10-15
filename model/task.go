@@ -19,9 +19,7 @@ type Repo struct {
 func (t *Task) GetUserByGithubID(githubID string) (*User, bool) {
 
 	found := false
-
 	var user *User
-
 	for _, u := range t.Users {
 		if u.GithubID.String() == githubID {
 			user = &u

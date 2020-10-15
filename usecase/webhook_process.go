@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/github"
 	"github.com/hayashiki/mentions/config"
-	"github.com/hayashiki/mentions/event_processor"
+	"github.com/hayashiki/mentions/event"
 	"github.com/hayashiki/mentions/notifier"
 	"github.com/hayashiki/mentions/repository"
 	"log"
@@ -47,11 +47,15 @@ func (w webhookProcess) Do(r *http.Request) error {
 
 	ghEvent, err := w.githubService.ParseWebHook(r, payload)
 
-	switch event := ghEvent.(type) {
+	if err != nil {
+		return err
+	}
+
+	switch ev := ghEvent.(type) {
 	case *github.IssueCommentEvent:
-		return w.processIssueComment(event)
+		return w.processIssueComment(ev)
 	case *github.PullRequestReviewCommentEvent:
-		return w.processPullRequestComment(event)
+		return w.processPullRequestComment(ev)
 	default:
 		return nil
 	}
@@ -59,27 +63,26 @@ func (w webhookProcess) Do(r *http.Request) error {
 
 func (w *webhookProcess) processIssueComment(ghEvent *github.IssueCommentEvent) error {
 	log.Printf("Called.processIssueComment")
-	event := event_processor.NewIssueComment(ghEvent)
+	ev := event.NewIssueComment(ghEvent)
 
-	log.Printf("RepositoryID is %v", event.Repository.ID)
-	task, err := w.taskRepo.GetByID(event.Repository.ID)
+	task, err := w.taskRepo.GetByID(ev.Repository.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
 	log.Printf("task is %v", task)
 
-	if hasReviewMagicWord(event.Comment) {
+	if hasReviewMagicWord(ev.Comment) {
 
-		user, ok := task.GetUserByGithubID(event.IssueOwner)
+		user, ok := task.GetUserByGithubID(ev.IssueOwner)
 		if !ok {
-			return fmt.Errorf("github user not found user %s", event.IssueOwner)
+			return fmt.Errorf("github user not found user %s", ev.IssueOwner)
 		}
 
 		payload := &repository.CreateReviewersPayload{
-			Owner:       event.Repository.Owner,
-			Name:        event.Repository.Name,
-			IssueNumber: event.IssueNumber,
+			Owner:       ev.Repository.Owner,
+			Name:        ev.Repository.Name,
+			IssueNumber: ev.IssueNumber,
 			Reviewers:   user.Reviewers.String(),
 		}
 
@@ -89,13 +92,13 @@ func (w *webhookProcess) processIssueComment(ghEvent *github.IssueCommentEvent) 
 		}
 
 		comment := strings.Join(user.ReviewersWithAt(), " ") + " レビューお願いします😀"
-		event.Comment = comment
+		ev.Comment = comment
 
 		commentPayload := &repository.EditIssueCommentPayload{
-			Owner:     event.Repository.Owner,
-			Name:      event.Repository.Name,
-			CommentID: event.CommentID,
-			Comment:   event.Comment,
+			Owner:     ev.Repository.Owner,
+			Name:      ev.Repository.Name,
+			CommentID: ev.CommentID,
+			Comment:   ev.Comment,
 		}
 
 		_, resp, err = w.githubService.EditIssueComment(commentPayload)
@@ -105,35 +108,37 @@ func (w *webhookProcess) processIssueComment(ghEvent *github.IssueCommentEvent) 
 	}
 
 	payload := notifier.ConvertPayload{
-		Comment:  event.Comment,
-		RepoName: event.Repository.FullName,
-		HTMLURL:  event.HTMLURL,
-		Title:    event.Title,
-		User:     event.User,
+		Comment:  ev.Comment,
+		RepoName: ev.Repository.FullName,
+		HTMLURL:  ev.HTMLURL,
+		Title:    ev.Title,
+		User:     ev.User,
 	}
 
 	if comment, ok := w.notifyService.ConvertComment(payload, task.Users); ok {
-		w.notifyService.Notify(task.WebhookURL, comment)
+		if err := w.notifyService.Notify(task.WebhookURL, comment); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func (w *webhookProcess) processPullRequestComment(ghEvent *github.PullRequestReviewCommentEvent) error {
-	event := event_processor.NewPullRequestCommentEvent(ghEvent)
+	ev := event.NewPullRequestCommentEvent(ghEvent)
 
-	task, err := w.taskRepo.GetByID(event.Repository.ID)
+	task, err := w.taskRepo.GetByID(ev.Repository.ID)
 
 	if err != nil {
 		return err
 	}
 
 	payload := notifier.ConvertPayload{
-		Comment:  event.Comment,
-		RepoName: event.Repository.FullName,
-		HTMLURL:  event.HTMLURL,
-		Title:    event.Title,
-		User:     event.User,
+		Comment:  ev.Comment,
+		RepoName: ev.Repository.FullName,
+		HTMLURL:  ev.HTMLURL,
+		Title:    ev.Title,
+		User:     ev.User,
 	}
 
 	if comment, ok := w.notifyService.ConvertComment(payload, task.Users); ok {
