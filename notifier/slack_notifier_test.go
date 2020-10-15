@@ -25,8 +25,8 @@ func TestSlackNotifier_Notify(t *testing.T) {
 		comment string
 	}
 	tests := []struct {
-		name   string
-		args   args
+		name string
+		args args
 	}{
 		{
 			name: "simple",
@@ -54,17 +54,17 @@ func TestSlackNotifier_ConvertComment(t *testing.T) {
 
 	type args struct {
 		payload ConvertPayload
-		users []model.User
+		users   []model.User
 	}
 	type want struct {
-		comment string
+		comment   string
 		converted bool
 	}
 
 	tests := []struct {
-		name   string
-		args   args
-		want   want
+		name string
+		args args
+		want want
 	}{
 		{
 			name: "convert success",
@@ -88,7 +88,7 @@ func TestSlackNotifier_ConvertComment(t *testing.T) {
 				},
 			},
 			want: want{
-				comment: "*hayashiki/sample <https://example.com|Cant open top page> * by: hayashiki\nhi <@UD7AKTEFK>, please fix this bug.",
+				comment:   "*hayashiki/sample <https://example.com|Cant open top page> * by: hayashiki\nhi <@UD7AKTEFK>, please fix this bug.",
 				converted: true,
 			},
 		},

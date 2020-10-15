@@ -10,21 +10,13 @@ import (
 	"github.com/hayashiki/mentions/notifier"
 	"github.com/hayashiki/mentions/repository"
 	"github.com/hayashiki/mentions/usecase"
-	"github.com/hayashiki/mentions/utils"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 )
 
 func main() {
-	err := godotenv.Load(utils.LoadEnvVariable())
-
-	if err != nil {
-		panic(err)
-	}
-
-	env := config.NewEnvironment("production")
+	env := config.NewMustEnvironment()
 
 	ghSvc := repository.NewClient(infrastructure.NewClient(env.GithubSecretToken))
 	slackSvc := notifier.NewSlackNotifier()

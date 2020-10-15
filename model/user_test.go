@@ -12,7 +12,11 @@ func TestGithubID_String(t *testing.T) {
 		g    GithubID
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			g:    "github",
+			want: "github",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -29,7 +33,11 @@ func TestGithubID_WithAt(t *testing.T) {
 		g    GithubID
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "@ are added at the beginning",
+			g:    "github",
+			want: "@github",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -46,7 +54,11 @@ func TestReviewers_String(t *testing.T) {
 		rs   Reviewers
 		want []string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "@ are added at the beginning",
+			rs:   Reviewers{"github"},
+			want: []string{"@github"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -75,7 +87,29 @@ func TestTask_GetUserByGithubID(t1 *testing.T) {
 		want   *User
 		want1  bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			fields: fields{
+				ID:         1,
+				Workspace:  "workspace",
+				Repo:       Repo{ID: "example", Owner: "repo", Name: "example"},
+				WebhookURL: "",
+				Users: []User{
+					User{
+						ID:       "user",
+						GithubID: "hayashiki",
+					},
+				},
+			},
+			args: args{
+				githubID: "hayashiki",
+			},
+			want: &User{
+				ID:       "user",
+				GithubID: "hayashiki",
+			},
+			want1: true,
+		},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {

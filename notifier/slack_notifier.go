@@ -108,4 +108,3 @@ func (n *SlackNotifier) ConvertComment(payload ConvertPayload, users []model.Use
 
 	return msg, ok
 }
-

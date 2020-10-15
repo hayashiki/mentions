@@ -1,4 +1,4 @@
-package event_processor
+package event
 
 import (
 	"github.com/google/go-github/github"
