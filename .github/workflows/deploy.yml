@@ -26,12 +26,12 @@ jobs:
 #        run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
 
       - name: Config app engine environment variables
-        run: go run cmd/deploy/env.go ${{ secrets.PROJECT_ID }} ${{ secrets.GITHUB_SECRET_TOKEN }} ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+        run: go run cmd/deploy/env.go ${{ secrets.GCP_PROJECT }} ${{ secrets.GH_SECRET_TOKEN }} ${{ secrets.GH_WEBHOOK_SECRET }}
 
       - name: Initialize Google Cloud SDK
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          project_id: ${{ secrets.PROJECT_ID }}
+          project_id: ${{ secrets.GCP_PROJECT }}
           service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS}}
 
       - name: Installing add on for golang
@@ -39,4 +39,4 @@ jobs:
 
       - name: Publish app to Google App Engine
         run: |
-          gcloud app deploy app.yaml --project=${{ secrets.PROJECT_ID }} -q
+          gcloud app deploy app.yaml --project=${{ secrets.GCP_PROJECT }} -q

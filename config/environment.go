@@ -7,8 +7,8 @@ import (
 )
 
 type Environment struct {
-	GithubWebhookSecret string `envconfig:"GITHUB_WEBHOOK_SECRET" required:"true"`
-	GithubSecretToken   string `envconfig:"GITHUB_SECRET_TOKEN" required:"true"`
+	GithubWebhookSecret string `envconfig:"GH_WEBHOOK_SECRET" required:"true"`
+	GithubSecretToken   string `envconfig:"GH_SECRET_TOKEN" required:"true"`
 	GCPProject          string `envconfig:"PROJECT" required:"true"`
 }
 
