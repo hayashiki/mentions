@@ -1,6 +1,8 @@
 .env.production
 github-config.json
-cmd/*
+cmd/seed/
 bkup.md
+
+*.out
 
 app.yaml
