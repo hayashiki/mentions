@@ -9,7 +9,7 @@ import (
 type Environment struct {
 	GithubWebhookSecret string `envconfig:"GH_WEBHOOK_SECRET" required:"true"`
 	GithubSecretToken   string `envconfig:"GH_SECRET_TOKEN" required:"true"`
-	GCPProject          string `envconfig:"PROJECT" required:"true"`
+	GCPProject          string `envconfig:"GCP_PROJECT" required:"true"`
 }
 
 func NewMustEnvironment() Environment {
