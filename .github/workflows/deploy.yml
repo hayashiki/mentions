@@ -42,7 +42,7 @@ jobs:
           gcloud app deploy app.yaml --project=${{ secrets.GCP_PROJECT }} -q
 
       - name: Slack Notification
-          uses: homoluctus/slatify@master
+        uses: homoluctus/slatify@master
         if: always()
         with:
           type: ${{ job.status }}
