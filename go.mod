@@ -4,13 +4,14 @@ go 1.13
 
 require (
 	cloud.google.com/go/datastore v1.1.0
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/mock v1.4.3
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.5
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/slack-go/slack v0.7.2
 	github.com/stretchr/testify v1.4.0
 	go.opencensus.io v0.22.4 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d

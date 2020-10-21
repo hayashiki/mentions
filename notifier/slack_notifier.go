@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hayashiki/mentions/model"
+	"github.com/slack-go/slack"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -16,13 +17,17 @@ var r = regexp.MustCompile(`@[a-zA-Z0-9_\-\.]+`)
 
 type Notifier interface {
 	Notify(webhookURL, message string) error
+	BotNotify(channel, message string) (*BotPostResp, error)
 	ConvertComment(payload ConvertPayload, users []model.User) (convertMessage string, ok bool)
+	UpdateSilently(channel, ts, message string) (*BotPostResp, error)
 }
 
-type SlackNotifier struct{}
+type SlackNotifier struct{
+	slack *slack.Client
+}
 
-func NewSlackNotifier() Notifier {
-	return &SlackNotifier{}
+func NewSlackNotifier(client *slack.Client) Notifier {
+	return &SlackNotifier{slack: client}
 }
 
 type ConvertPayload struct {
@@ -80,6 +85,7 @@ func (n *SlackNotifier) Notify(webhookURL, message string) error {
 		}
 		return errors.New(string(b))
 	}
+
 	return nil
 }
 
@@ -107,4 +113,34 @@ func (n *SlackNotifier) ConvertComment(payload ConvertPayload, users []model.Use
 	msg := payload.buildMessage()
 
 	return msg, ok
+}
+
+type BotPostResp struct {
+	Channel string
+	Timestamp string
+}
+
+func (n *SlackNotifier) BotNotify(channel, message string) (*BotPostResp, error) {
+
+	opts := []slack.MsgOption{
+		slack.MsgOptionText(message, false),
+	}
+	ch, ts, err := n.slack.PostMessage(channel, opts...)
+
+	return &BotPostResp{
+		Channel:   ch,
+		Timestamp: ts,
+	}, err
+}
+
+func (n *SlackNotifier) UpdateSilently(channel, ts, message string) (*BotPostResp, error) {
+	opts := []slack.MsgOption{
+		slack.MsgOptionText(message, false),
+	}
+	ch, ts, _,err := n.slack.UpdateMessage(channel, ts, opts...)
+
+	return &BotPostResp{
+		Channel:   ch,
+		Timestamp: ts,
+	}, err
 }
