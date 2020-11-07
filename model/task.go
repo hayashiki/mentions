@@ -6,6 +6,7 @@ type Task struct {
 	ID         int64 // github repositoryID
 	Workspace  string
 	Repo       Repo
+	Slack      Slack
 	WebhookURL string
 	Users      []User
 }
@@ -14,6 +15,11 @@ type Repo struct {
 	ID    string
 	Owner string
 	Name  string
+}
+
+type Slack struct {
+	Channel string
+	BotToken string
 }
 
 func (t *Task) GetUserByGithubID(githubID string) (*User, bool) {

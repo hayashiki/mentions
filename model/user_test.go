@@ -55,9 +55,9 @@ func TestReviewers_String(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "@ are added at the beginning",
-			rs:   Reviewers{"github"},
-			want: []string{"@github"},
+			name: "success",
+			rs:   Reviewers{"github", "gitlab"},
+			want: []string{"github", "gitlab"},
 		},
 	}
 	for _, tt := range tests {

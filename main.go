@@ -7,7 +7,6 @@ import (
 	"github.com/hayashiki/mentions/config"
 	"github.com/hayashiki/mentions/handler"
 	"github.com/hayashiki/mentions/infrastructure"
-	"github.com/hayashiki/mentions/notifier"
 	"github.com/hayashiki/mentions/repository"
 	"github.com/hayashiki/mentions/usecase"
 	"log"
@@ -19,10 +18,10 @@ func main() {
 	env := config.NewMustEnvironment()
 
 	ghSvc := repository.NewClient(infrastructure.NewClient(env.GithubSecretToken))
-	slackSvc := notifier.NewSlackNotifier()
+	//slackSvc := notifier.NewSlackNotifier()
 	taskRepo := repository.NewTaskRepository(infrastructure.GetDSClient(env.GCPProject))
 
-	uc := usecase.NewWebhookProcess(env, ghSvc, slackSvc, taskRepo)
+	uc := usecase.NewWebhookProcess(env, ghSvc, taskRepo)
 
 	ghHandler := handler.NewWebhookHandler(uc)
 

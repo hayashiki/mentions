@@ -53,13 +53,13 @@ func (r *userRepository) FindByGithubID(githubID string) (*model.User, error) {
 	keys, err := r.dsClient.GetAll(context.Background(), q, nil)
 
 	if err != nil {
-		return nil, fmt.Errorf("Not found User %w", err.Error())
+		return nil, fmt.Errorf("not found user keys %w", err)
 	}
 
 	var user model.User
 
 	if err := r.dsClient.Get(context.Background(), keys[0], &user); err != nil {
-		return nil, fmt.Errorf("Not found User %w", err.Error())
+		return nil, fmt.Errorf("not found user %w", err)
 	}
 
 	user.ID = keys[0].Name
@@ -76,13 +76,13 @@ func (r *userRepository) FindBySlackID(slackID string) (*model.User, error) {
 	keys, err := r.dsClient.GetAll(context.Background(), q, nil)
 
 	if err != nil {
-		return nil, fmt.Errorf("Not found User %w", err.Error())
+		return nil, fmt.Errorf("not found user %w", err)
 	}
 
 	var user model.User
 
 	if err := r.dsClient.Get(context.Background(), keys[0], &user); err != nil {
-		return nil, fmt.Errorf("Not found User %w", err.Error())
+		return nil, fmt.Errorf("not found user %w", err)
 	}
 
 	user.ID = keys[0].Name
