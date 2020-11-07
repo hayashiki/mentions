@@ -6,9 +6,9 @@ import (
 	"github.com/hayashiki/mentions/appcache"
 	"github.com/hayashiki/mentions/config"
 	"github.com/hayashiki/mentions/event"
-	"github.com/hayashiki/mentions/notifier"
+	"github.com/hayashiki/mentions/model"
 	"github.com/hayashiki/mentions/repository"
-	"github.com/slack-go/slack"
+	"github.com/hayashiki/mentions/slack"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,7 +23,6 @@ type WebhookProcess interface {
 type webhookProcess struct {
 	config        config.Environment
 	githubService repository.Github
-	notifyService notifier.Notifier
 	taskRepo      repository.TaskRepository
 	cache         appcache.InMemoryCache
 }
@@ -31,13 +30,11 @@ type webhookProcess struct {
 func NewWebhookProcess(
 	env config.Environment,
 	gSvc repository.Github,
-	nSvc notifier.Notifier,
 	taskRepo repository.TaskRepository,
 ) WebhookProcess {
 	return &webhookProcess{
 		config:        env,
 		githubService: gSvc,
-		notifyService: nSvc,
 		taskRepo:      taskRepo,
 		cache: appcache.NewInMemoryCache(10 * time.Minute),
 	}
@@ -79,21 +76,17 @@ func (w *webhookProcess) processEditIssueComment(ghEvent *github.IssueCommentEve
 	ev := event.NewIssueComment(ghEvent)
 	key := strconv.Itoa(int(ev.CommentID))
 
-	var postResp notifier.BotPostResp
+	var postResp slack.MessageResponse
 	w.cache.Get(key, &postResp)
 
-	log.Printf("commentID %v", postResp)
-
 	task, err := w.taskRepo.GetByID(ev.Repository.ID)
-
-	bot := slack.New(task.Slack.BotToken)
-	n := notifier.NewSlackNotifier(bot)
+	slackSvc := slack.NewClient(slack.New(task.Slack.BotToken))
 
 	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
 
-	payload := notifier.ConvertPayload{
+	payload := slack.ConvertPayload{
 		Comment:  ev.Comment,
 		RepoName: ev.Repository.FullName,
 		HTMLURL:  ev.HTMLURL,
@@ -101,9 +94,11 @@ func (w *webhookProcess) processEditIssueComment(ghEvent *github.IssueCommentEve
 		User:     ev.User,
 	}
 
-	if comment, ok := w.notifyService.ConvertComment(payload, task.Users); ok {
+	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
 		// キャッシュしなおしてもいいかも
-		if _, err := n.UpdateSilently(postResp.Channel, postResp.Timestamp, comment); err != nil {
+		log.Printf("n debug")
+		if _, err := slackSvc.UpdateMessage(postResp.Channel, postResp.Timestamp, comment); err != nil {
+			log.Printf("n debug err %v", err)
 			return err
 		}
 	}
@@ -117,48 +112,19 @@ func (w *webhookProcess) processIssueComment(ghEvent *github.IssueCommentEvent) 
 	ev := event.NewIssueComment(ghEvent)
 
 	task, err := w.taskRepo.GetByID(ev.Repository.ID)
-
 	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
-	log.Printf("task is %v", task)
+
+	slackSvc := slack.NewClient(slack.New(task.Slack.BotToken))
 
 	if hasReviewMagicWord(ev.Comment) {
-
-		user, ok := task.GetUserByGithubID(ev.IssueOwner)
-		if !ok {
-			return fmt.Errorf("github user not found user %s", ev.IssueOwner)
-		}
-
-		payload := &repository.CreateReviewersPayload{
-			Owner:       ev.Repository.Owner,
-			Name:        ev.Repository.Name,
-			IssueNumber: ev.IssueNumber,
-			Reviewers:   user.Reviewers.String(),
-		}
-
-		_, resp, err := w.githubService.CreateReviewers(payload)
-		if err != nil {
-			return fmt.Errorf("failed to create reviewer resp %v, err=%v", resp, err)
-		}
-
-		comment := strings.Join(user.ReviewersWithAt(), " ") + " レビューお願いします😀"
-		ev.Comment = comment
-
-		commentPayload := &repository.EditIssueCommentPayload{
-			Owner:     ev.Repository.Owner,
-			Name:      ev.Repository.Name,
-			CommentID: ev.CommentID,
-			Comment:   ev.Comment,
-		}
-
-		_, resp, err = w.githubService.EditIssueComment(commentPayload)
-		if err != nil {
-			return fmt.Errorf("failed to edit issue resp %v, err=%v", resp, err)
+		if err := w.editIssue(task, ev); err != nil {
+			return fmt.Errorf("failed to edit github issue %v", err)
 		}
 	}
 
-	payload := notifier.ConvertPayload{
+	payload := slack.ConvertPayload{
 		Comment:  ev.Comment,
 		RepoName: ev.Repository.FullName,
 		HTMLURL:  ev.HTMLURL,
@@ -166,34 +132,18 @@ func (w *webhookProcess) processIssueComment(ghEvent *github.IssueCommentEvent) 
 		User:     ev.User,
 	}
 
-	if comment, ok := w.notifyService.ConvertComment(payload, task.Users); ok {
+	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
 
-		if 1 ==0 {
-			if err := w.notifyService.Notify(task.WebhookURL, comment); err != nil {
-				return err
-			}
-		}
-
-		bot := slack.New(task.Slack.BotToken)
-		n := notifier.NewSlackNotifier(bot)
-
-		resp, err := n.BotNotify(task.Slack.Channel, comment)
-
+		resp, err := slackSvc.PostMessage(task.Slack.Channel, comment)
 		if err != nil {
+			log.Printf("err is %v", err)
 			return err
 		}
-
 		key := strconv.Itoa(int(ev.CommentID))
-		log.Printf("commentID %d", ev.CommentID)
-
 		w.cache.Add(key, resp, 10 * time.Minute)
-
-		var postResp notifier.BotPostResp
+		var postResp slack.MessageResponse
 		w.cache.Get(key, &postResp)
-
-		log.Printf("postResp %v", postResp)
 	}
-
 	return nil
 }
 
@@ -201,12 +151,13 @@ func (w *webhookProcess) processPullRequestComment(ghEvent *github.PullRequestRe
 	ev := event.NewPullRequestCommentEvent(ghEvent)
 
 	task, err := w.taskRepo.GetByID(ev.Repository.ID)
+	slackSvc := slack.NewClient(slack.New(task.Slack.BotToken))
 
 	if err != nil {
 		return err
 	}
 
-	payload := notifier.ConvertPayload{
+	payload := slack.ConvertPayload{
 		Comment:  ev.Comment,
 		RepoName: ev.Repository.FullName,
 		HTMLURL:  ev.HTMLURL,
@@ -214,12 +165,12 @@ func (w *webhookProcess) processPullRequestComment(ghEvent *github.PullRequestRe
 		User:     ev.User,
 	}
 
-	if comment, ok := w.notifyService.ConvertComment(payload, task.Users); ok {
+	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
 
 		bot := slack.New(task.Slack.BotToken)
-		n := notifier.NewSlackNotifier(bot)
+		n := slack.NewClient(bot)
 
-		resp, err := n.BotNotify(task.Slack.Channel, comment)
+		resp, err := n.PostMessage(task.Slack.Channel, comment)
 		if err != nil {
 			return err
 		}
@@ -233,6 +184,42 @@ func (w *webhookProcess) processPullRequestComment(ghEvent *github.PullRequestRe
 	return nil
 }
 
+func (w *webhookProcess) editIssue(task *model.Task, ev *event.Event) error {
+	user, ok := task.GetUserByGithubID(ev.IssueOwner)
+	if !ok {
+		return fmt.Errorf("github user not found user %s", ev.IssueOwner)
+	}
+
+	payload := &repository.CreateReviewersPayload{
+		Owner:       ev.Repository.Owner,
+		Name:        ev.Repository.Name,
+		IssueNumber: ev.IssueNumber,
+		Reviewers:   user.Reviewers.String(),
+	}
+
+	_, resp, err := w.githubService.CreateReviewers(payload)
+	if err != nil {
+		return fmt.Errorf("failed to create reviewer resp %v, err=%v", resp, err)
+	}
+
+	comment := strings.Join(user.ReviewersWithAt(), " ") + " レビューお願いします😀"
+	ev.Comment = comment
+
+	commentPayload := &repository.EditIssueCommentPayload{
+		Owner:     ev.Repository.Owner,
+		Name:      ev.Repository.Name,
+		CommentID: ev.CommentID,
+		Comment:   ev.Comment,
+	}
+
+	_, resp, err = w.githubService.EditIssueComment(commentPayload)
+	if err != nil {
+		return fmt.Errorf("failed to edit issue resp %v, err=%v", resp, err)
+	}
+	return nil
+}
+
 func hasReviewMagicWord(s string) bool {
 	return string([]rune(s)[:2]) == "r?"
 }
+

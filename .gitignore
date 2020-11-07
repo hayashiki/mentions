@@ -1,4 +1,12 @@
-.env.production
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+*.test
+
+.env
 github-config.json
 cmd/seed/
 bkup.md

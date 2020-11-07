@@ -1,4 +1,4 @@
-package notifier
+package slack
 
 import (
 	"github.com/hayashiki/mentions/model"
@@ -13,7 +13,7 @@ func TestSlackNotifier_Notify(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("POST", "https://hooks.slack.com/services/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",
+	httpmock.RegisterResponder("POST", "https://hooks.bot.com/services/TUGGCG2BC/B0135DD7LHJ/ZcJRgGUwi1N99X74DGIhsjgh",
 		httpmock.NewStringResponder(200, `{}`))
 
 	type args struct {
@@ -31,14 +31,14 @@ func TestSlackNotifier_Notify(t *testing.T) {
 		{
 			name: "simple",
 			args: args{
-				webhookURL: "https://hooks.slack.com/services/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",
+				webhookURL: "https://hooks.bot.com/services/TUGGCG2BC/B0135DD7LHJ/ZcJRgGUwi1N99X74DGIhsjgh",
 				message:    "message <@hayashiki>",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewSlackNotifier()
+			n := NewClient()
 			err := n.Notify(tt.args.webhookURL, tt.args.message)
 			assert.NoError(t, err)
 		})
@@ -49,7 +49,7 @@ func TestSlackNotifier_ConvertComment(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("POST", "https://hooks.slack.com/services/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",
+	httpmock.RegisterResponder("POST", "https://hooks.bot.com/services/TUGGCG2BC/B0135DD7LHJ/ZcJRgGUwi1N99X74DGIhsjgh",
 		httpmock.NewStringResponder(200, `{}`))
 
 	type args struct {
@@ -121,7 +121,7 @@ func TestSlackNotifier_ConvertComment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := NewSlackNotifier()
+			n := NewClient()
 
 			got, ok := n.ConvertComment(tt.args.payload, tt.args.users)
 
