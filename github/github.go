@@ -1,8 +1,9 @@
-package repository
+package github
 
 import (
 	"context"
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 	"net/http"
 )
 
@@ -21,6 +22,14 @@ func NewClient(ghClient *github.Client) Github {
 	return &client{
 		ghClient: ghClient,
 	}
+}
+
+func GetClient(token string) *github.Client {
+	ctx := context.Background()
+
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(ctx, ts)
+	return github.NewClient(tc)
 }
 
 type CreateReviewersPayload struct {

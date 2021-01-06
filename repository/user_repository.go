@@ -2,17 +2,17 @@ package repository
 
 import (
 	"cloud.google.com/go/datastore"
+	"google.golang.org/api/iterator"
+
 	"context"
 	"fmt"
 	"github.com/hayashiki/mentions/model"
-	"time"
 )
 
 //go:generate mockgen -source user_repository.go -destination mock_repo/user_repository.go
 type UserRepository interface {
-	//List()
-	//Get()
-	Put(user *model.User) error
+	List(team *model.Team, cursor string, limit int) ([]*model.User, string, error)
+	Put(team *model.Team, user *model.User) error
 	FindByGithubID(githubID string) (*model.User, error)
 	FindBySlackID(githubID string) (*model.User, error)
 }
@@ -21,26 +21,57 @@ type userRepository struct {
 	dsClient *datastore.Client
 }
 
-func NewUserRepository(client *datastore.Client) UserRepository {
-	return &userRepository{dsClient: client}
+func (r *userRepository) List(team *model.Team, cursor string, limit int) ([]*model.User, string, error) {
+	q := datastore.NewQuery(model.UserKind).Ancestor(r.parentKey(team))
+	if cursor != "" {
+		dsCursor, err := datastore.DecodeCursor(cursor)
+		if err != nil {
+
+		}
+		q = q.Start(dsCursor)
+	}
+	q = q.Limit(limit)
+
+	var el []*model.User
+	ctx := context.Background()
+	it := r.dsClient.Run(ctx, q)
+	for {
+		var e model.User
+		if _, err := it.Next(&e); err == iterator.Done {
+			break
+		} else if err != nil {
+			fmt.Errorf("fail err=%v", err)
+		}
+		el = append(el, &e)
+	}
+
+	nextCursor, err := it.Cursor()
+	if err != nil {
+		return nil, "", err
+	}
+
+	return el, nextCursor.String(), nil
 }
 
-type user struct {
-	ID        *datastore.Key `json:"id" datastore:"__key__"`
-	SlackID   string         `json:"slack_id" datastore:"slack_id"`
-	GithubID  string         `json:"slack_id" datastore:"github_id"`
-	Reviewers []Reviewer
-	CreatedAt time.Time `datastore:"RegisteredAt,noindex"`
+func (r *userRepository) key(id string, t *model.Team) *datastore.Key {
+	return datastore.NameKey(model.UserKind, id, r.parentKey(t))
+}
+
+func (r *userRepository) parentKey(t *model.Team) *datastore.Key {
+	return datastore.NameKey(model.TeamKind, t.ID, nil)
+}
+
+func NewUserRepository(client *datastore.Client) UserRepository {
+	return &userRepository{dsClient: client}
 }
 
 type Reviewer struct {
 	SlackID string
 }
 
-func (r *userRepository) Put(user *model.User) error {
+func (r *userRepository) Put(team *model.Team, user *model.User) error {
 	ctx := context.Background()
-	k := datastore.NameKey(model.UserKind, user.ID, nil)
-	_, err := r.dsClient.Put(ctx, k, user)
+	_, err := r.dsClient.Put(ctx, r.key(user.ID, team), user)
 	if err != nil {
 		return err
 	}
@@ -65,9 +96,6 @@ func (r *userRepository) FindByGithubID(githubID string) (*model.User, error) {
 	user.ID = keys[0].Name
 
 	return &user, nil
-	//if err = Transaction.Get(keys[0], &user); err != nil {
-	//
-	//}
 }
 
 func (r *userRepository) FindBySlackID(slackID string) (*model.User, error) {
