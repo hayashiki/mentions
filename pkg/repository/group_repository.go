@@ -4,7 +4,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"context"
 	"fmt"
-	"github.com/hayashiki/mentions/model"
+	"github.com/hayashiki/mentions/pkg/model"
 	"google.golang.org/api/iterator"
 )
 
