@@ -8,13 +8,17 @@ import (
 const UserKind = "users"
 
 type User struct {
-	ID        string
-	Workspace string
-	SlackID   string   `json:"slack_id" datastore:"slack_id"`
-	GithubID  GithubID `json:"github_id" datastore:"github_id"`
-	Reviewers Reviewers
-	CreatedAt time.Time `datastore:"created_at,noindex"`
-	UpdatedAt time.Time `datastore:"updated_at,noindex"`
+	ID        string    `json:"id" datastore:"id"`
+	Name      string    `json:"name" datastore:"name"`
+	Avatar    string    `json:"avatar" datastore:"avatar"`
+	Token     string    `json:"token" datastore:"token"`
+	SlackID   string    `json:"slackId" datastore:"slackId"`
+	GithubID  GithubID  `json:"githubId" datastore:"githubId"`
+	Reviewers Reviewers `json:"reviewers" datastore:"reviewers"`
+	GroupID   int64     `json:"groupId" datastore:"groupId"`
+	TeamID    string    `json:"teamId" datastore:"teamId"`
+	CreatedAt time.Time `datastore:"createdAt,noindex"`
+	UpdatedAt time.Time `datastore:"updatedAt,noindex"`
 }
 
 type UserID int64
@@ -59,4 +63,12 @@ func (u User) ReviewersWithAt() []string {
 
 func (u User) SlackWithBracketAt() string {
 	return fmt.Sprintf("<@%s>", u.SlackID)
+}
+
+func (u User) SetGithubID(ghID string) {
+	u.GithubID = GithubID(ghID)
+}
+
+func (u User) SetSlackID(slackID string) {
+	u.SlackID = slackID
 }
