@@ -2,13 +2,17 @@ package github
 
 import (
 	"context"
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+	"log"
 	"net/http"
 )
 
 type Github interface {
+	// けす
 	Verify(r *http.Request, secret []byte) ([]byte, error)
+	// けす
 	ParseWebHook(r *http.Request, payload []byte) (interface{}, error)
 	CreateReviewers(payload *CreateReviewersPayload) (*github.PullRequest, *github.Response, error)
 	EditIssueComment(payload *EditIssueCommentPayload) (*github.IssueComment, *github.Response, error)
@@ -30,6 +34,16 @@ func GetClient(token string) *github.Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
 	return github.NewClient(tc)
+}
+
+func GetAppClient(appID int64, installation int64, privateKeyFilename string) *github.Client {
+
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, installation, privateKeyFilename)
+	if err != nil {
+		log.Printf("failed to read file")
+	}
+
+	return github.NewClient(&http.Client{Transport: itr})
 }
 
 type CreateReviewersPayload struct {
@@ -61,6 +75,25 @@ func (c *client) EditIssueComment(payload *EditIssueCommentPayload) (*github.Iss
 }
 
 func (c *client) Verify(r *http.Request, secret []byte) ([]byte, error) {
+	payload, err := github.ValidatePayload(r, secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+type RequestValidator interface {
+	Validate(r *http.Request, secret []byte) ([]byte, error)
+}
+
+type githubRequestValidator struct{}
+
+func NewGithubValidator() RequestValidator {
+	return &githubRequestValidator{}
+}
+
+func (g *githubRequestValidator) Validate(r *http.Request, secret []byte) ([]byte, error) {
 	payload, err := github.ValidatePayload(r, secret)
 	if err != nil {
 		return nil, err

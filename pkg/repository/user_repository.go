@@ -69,7 +69,6 @@ type Reviewer struct {
 	SlackID string
 }
 
-
 func (r *userRepository) Get(ctx context.Context, team *model.Team, id string) (*model.User, error) {
 	dst := &model.User{}
 	err := r.dsClient.Get(ctx, r.key(id, team), dst)
