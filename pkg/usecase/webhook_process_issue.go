@@ -10,7 +10,6 @@ import (
 	"github.com/hayashiki/mentions/pkg/model"
 	"github.com/hayashiki/mentions/pkg/slack"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 	"strings"
 )
 
@@ -73,8 +72,7 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 	defer quit()
 
 	ev := event.NewIssueComment(ghEvent)
-	issueCommentKey := strconv.Itoa(int(ev.CommentID))
-	slackMessageCache, err := mem.Get(issueCommentKey)
+	slackMessageCache, err := mem.Get(ev.CommentCacheKey())
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
 	if err != nil {
 		return err
@@ -107,8 +105,7 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 			}
 		} else {
 			// r?のケース
-			issueNumberKey := strconv.Itoa(int(ev.IssueNumber))
-			slackMessageCache, err = mem.Get(issueNumberKey)
+			slackMessageCache, err = mem.Get(ev.IssueCacheKey())
 			var ts string
 			// r?のケースで手前に一度でもMentions経由投稿があった場合
 			if slackMessageCache != nil {
@@ -175,8 +172,7 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 
 	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
 		log.Debug("Convert Comment")
-		issueNumberKey := strconv.Itoa(int(ev.IssueNumber))
-		slackMessageCache, err := mem.Get(issueNumberKey)
+		slackMessageCache, err := mem.Get(ev.IssueCacheKey())
 
 		// ヒットした場合 == スレッド表示したい
 		var ts string
@@ -188,18 +184,17 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 			log.Printf("err is %v", err)
 			return err
 		}
-		issueCommentKey := strconv.Itoa(int(ev.CommentID))
 
 		log.WithFields(log.Fields{
 			"ts": ts,
-			"issueNumberKey": issueNumberKey,
-			"issueCommentKey": issueCommentKey,
+			"issueNumberKey": ev.IssueCacheKey(),
+			"issueCommentKey": ev.CommentCacheKey(),
 		})
 		// 最初の投稿の場合にキャッシュする
 		if ts == "" {
-			err = mem.Set(issueNumberKey, resp)
+			err = mem.Set(ev.IssueCacheKey(), resp)
 		}
-		if err := mem.Set(issueCommentKey, resp); err != nil {
+		if err := mem.Set(ev.CommentCacheKey(), resp); err != nil {
 			return err
 		}
 	}

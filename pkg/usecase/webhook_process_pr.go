@@ -7,7 +7,6 @@ import (
 	"github.com/hayashiki/mentions/pkg/mem"
 	"github.com/hayashiki/mentions/pkg/slack"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 )
 
 func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent *github.PullRequestReviewCommentEvent) error {
@@ -38,11 +37,7 @@ func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent 
 	}
 
 	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
-		issueNumberKey := strconv.Itoa(ev.IssueNumber)
-		issueCommentKey := strconv.Itoa(int(ev.CommentID))
-		log.Printf("commentID %d", ev.CommentID)
-
-		slackMessageCache, err := mem.Get(issueNumberKey)
+		slackMessageCache, err := mem.Get(ev.IssueCacheKey())
 
 		var postResp slack.MessageResponse
 
@@ -68,11 +63,11 @@ func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent 
 		// セットしなおし不要
 		// スレッドキャッシュがない場合 つまり最初の投稿の場合にキャッシュする
 		if ts == "" {
-			err = mem.Set(issueNumberKey, resp)
+			err = mem.Set(ev.IssueCacheKey(), resp)
 			log.Printf("memcached, %v", err)
 		}
 
-		err = mem.Set(issueCommentKey, resp)
+		err = mem.Set(ev.CommentCacheKey(), resp)
 		log.Printf("memcached, %v", err)
 	}
 

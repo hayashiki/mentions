@@ -15,9 +15,7 @@ import (
 	"github.com/hayashiki/mentions/pkg/repository"
 	"github.com/hayashiki/mentions/pkg/usecase"
 	log "github.com/sirupsen/logrus"
-	"html/template"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -115,6 +113,7 @@ func (a *App) Handler() chi.Router {
 	formatter := new(log.TextFormatter)
 	formatter.TimestampFormat = "2001-07-06 12:03:15"
 	formatter.FullTimestamp = true
+	log.SetLevel(log.DebugLevel)
 
 	r := chi.NewRouter()
 	r.Use(
@@ -123,9 +122,9 @@ func (a *App) Handler() chi.Router {
 	)
 	r.Method(http.MethodPost, "/webhook/github", adminHandler(a.postWebhook))
 	r.Method(http.MethodPost, "/webhook/github/apps", adminHandler(a.postAppsWebhook))
-	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
-	})
+	//r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+	//	http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
+	//})
 
 	r.Method(http.MethodGet, "/slack/team/auth", adminHandler(a.slackTeamAuthorize))
 	r.Method(http.MethodGet, "/slack/user/auth", adminHandler(a.slackUserAuthorize))
@@ -139,8 +138,8 @@ func (a *App) Handler() chi.Router {
 		r.Method(http.MethodPatch, "/users/{id}", adminHandler(a.UpdateUser))
 		r.Method(http.MethodGet, "/slack/users", adminHandler(a.ListSlackAPIUser))
 	})
-	r.Method(http.MethodGet, "/signup", adminHandler(a.loginHandler))
-	r.Method(http.MethodGet, "/", adminHandler(a.appHandler))
+	//r.Method(http.MethodGet, "/signup", adminHandler(a.loginHandler))
+	//r.Method(http.MethodGet, "/", adminHandler(a.appHandler))
 
 	r.Get("/github/callback", GithubCallback)
 	r.Method(http.MethodGet, "/github/installation/callback", adminHandler(a.InstallationCallback))
@@ -260,35 +259,6 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(map[string]interface{}{"error": http.StatusText(http.StatusNotFound)})
-}
-
-func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) error {
-	if err := a.renderTemplate(w, "signup.html"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *App) appHandler(w http.ResponseWriter, r *http.Request) error {
-	if err := a.renderTemplate(w, "index.html"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *App) renderTemplate(w http.ResponseWriter, filename string) error {
-	t, err := template.ParseFiles(filepath.Join("template", filename))
-	if err != nil {
-		return err
-	}
-	data := map[string]interface{}{}
-	if a.isDev {
-		data["js"] = "http://localhost:8081"
-	} else {
-		data["js"] = "/static/js"
-	}
-	w.Header().Set("Content-Type", "text/html")
-	return t.Execute(w, data)
 }
 
 func (a *App) postWebhook(w http.ResponseWriter, r *http.Request) error {

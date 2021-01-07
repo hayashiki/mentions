@@ -19,7 +19,7 @@ admin
 frontend
 web
 static
-template
+#template
 testdata
 /node_modules/
 keys
