@@ -80,13 +80,9 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
 	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
 	if err != nil {
-		return err
-	}
-	task.Users = users
-
-	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
+	task.SetUsers(users)
 
 	payload := slack.ConvertPayload{
 		Comment:  ev.Comment,
