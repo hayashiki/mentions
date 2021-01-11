@@ -3,6 +3,7 @@ package event
 import (
 	"github.com/google/go-github/github"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -21,6 +22,14 @@ type Event struct {
 	InstallationID int64
 
 	OriginalEvent interface{}
+}
+
+func (e *Event) IssueCacheKey() string {
+	return strconv.Itoa(int(e.Repository.ID)) + "-" + strconv.Itoa(e.IssueNumber)
+}
+
+func (e *Event) CommentCacheKey() string {
+	return e.IssueCacheKey() + "-" + strconv.Itoa(int(e.CommentID))
 }
 
 // Repository is

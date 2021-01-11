@@ -10,7 +10,6 @@ import (
 	"github.com/hayashiki/mentions/pkg/model"
 	"github.com/hayashiki/mentions/pkg/slack"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 	"strings"
 )
 
@@ -73,9 +72,11 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 	defer quit()
 
 	ev := event.NewIssueComment(ghEvent)
-	issueCommentKey := strconv.Itoa(int(ev.CommentID))
-	slackMessageCache, err := mem.Get(issueCommentKey)
+	slackMessageCache, err := mem.Get(ev.CommentCacheKey())
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
+	if err != nil {
+		return err
+	}
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
 	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
 	if err != nil {
@@ -104,8 +105,7 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 			}
 		} else {
 			// r?のケース
-			issueNumberKey := strconv.Itoa(int(ev.IssueNumber))
-			slackMessageCache, err = mem.Get(issueNumberKey)
+			slackMessageCache, err = mem.Get(ev.IssueCacheKey())
 			var ts string
 			// r?のケースで手前に一度でもMentions経由投稿があった場合
 			if slackMessageCache != nil {
@@ -130,11 +130,10 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 	defer quit()
 
 	//ghEvent.Installation.IDをつかってteamsを判定する
-
 	ev := event.NewIssueComment(ghEvent)
 
 	// 複数になる
-	log.Printf("ev.Repository.ID %v", ev.Repository.ID)
+	log.Debugf("ev.Repository.ID %v", ev.Repository.ID)
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
 
 	if err != nil {
@@ -143,8 +142,8 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 
 	var slackSvc slack.Client
 	if task.Team == nil {
-		log.Fatalf("task.Team is not exsits")
-		return fmt.Errorf("task.Team is not exsits %v", task)
+		log.Errorf("task.Team is not exists task: %v", task)
+		return fmt.Errorf("task.Team is not exists %v", task)
 	}
 	slackSvc = slack.NewClient(slack.New(task.Team.Token))
 
@@ -158,8 +157,8 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		if err := w.editIssue(task, ev); err != nil {
 			return fmt.Errorf("failed to edit github issue %v", err)
 		}
-		log.Printf("return")
-		// このeditでまたwebhookがとぶのでそれでeditする
+		log.Infof("gor r? word issue: %v", ev.IssueNumber)
+		// Edit処理でWebhookがとぶのでそれで再度editする
 		return nil
 	}
 
@@ -171,49 +170,33 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		User:     ev.User,
 	}
 
-	log.Printf("users  %v", task.Users)
 	if comment, ok := slackSvc.ConvertComment(payload, task.Users); ok {
-
-		log.Printf("ev.Cnvert")
-		issueNumberKey := strconv.Itoa(int(ev.IssueNumber))
-		slackMessageCache, err := mem.Get(issueNumberKey)
-		log.Printf("is  err %v", err)
+		log.Debug("Convert Comment")
+		slackMessageCache, err := mem.Get(ev.IssueCacheKey())
 
 		// ヒットした場合 == スレッド表示したい
 		var ts string
-		log.Printf("slackMessageCache exists check start %v", slackMessageCache)
-
 		if slackMessageCache != nil {
-			log.Printf("slackMessageCachee %v", slackMessageCache)
 			ts = slackMessageCache.Timestamp
 		}
-
-		log.Printf("ts  is %v", ts)
-
-		log.Printf("task is %v", task.Channel)
 		resp, err := slackSvc.PostMessage(task.Channel, ts, comment)
-
-		log.Printf("resp  is %v", resp)
-
 		if err != nil {
 			log.Printf("err is %v", err)
 			return err
 		}
-		issueCommentKey := strconv.Itoa(int(ev.CommentID))
 
-		log.Printf("[create] issueNumberKey is %v", issueNumberKey)
-		log.Printf("[create] issueCommentKey is %v", issueCommentKey)
-		log.Printf("cached, %v", resp)
-
-		// セットしなおし不要
-		// スレッドキャッシュがない場合 つまり最初の投稿の場合にキャッシュする
+		log.WithFields(log.Fields{
+			"ts": ts,
+			"issueNumberKey": ev.IssueCacheKey(),
+			"issueCommentKey": ev.CommentCacheKey(),
+		})
+		// 最初の投稿の場合にキャッシュする
 		if ts == "" {
-			err = mem.Set(issueNumberKey, resp)
-			log.Printf("memcached, %v", err)
+			err = mem.Set(ev.IssueCacheKey(), resp)
 		}
-
-		err = mem.Set(issueCommentKey, resp)
-		log.Printf("memcached, %v", err)
+		if err := mem.Set(ev.CommentCacheKey(), resp); err != nil {
+			return err
+		}
 	}
 	return nil
 }
