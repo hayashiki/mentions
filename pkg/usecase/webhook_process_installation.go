@@ -20,8 +20,8 @@ func (w *webhookProcess) processInstallationReposAddedEvent(ctx context.Context,
 			FullName: repo.FullName,
 		})
 		if err != nil {
-			log.Printf("error is err: %v", err)
-			return err
+			log.WithError(err).Errorf("failed to put repo %v", repo.ID)
+			continue
 		}
 	}
 	return nil
@@ -35,8 +35,8 @@ func (w *webhookProcess) processInstallationReposRemovedEvent(ctx context.Contex
 		log.Printf("repo.ID: %v", repo.ID)
 		err := w.repoRepo.Delete(ctx, repo.ID)
 		if err != nil {
-			log.Printf("error is err: %v", err)
-			return err
+			log.WithError(err).Errorf("failed to put repo %v", repo.ID)
+			continue
 		}
 	}
 	return nil

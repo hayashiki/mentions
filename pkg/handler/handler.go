@@ -163,7 +163,7 @@ func (a *App) InstallationCallback(w http.ResponseWriter, r *http.Request) error
 
 	int, err := strconv.Atoi(resp.installationID)
 
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 87947, int64(int), a.config.GithubAppPrivateKeyFileName)
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, a.config.GithubAppID, int64(int), a.config.GithubAppPrivateKeyFileName)
 	if err != nil {
 		log.WithError(err).Error("failed to read keyFile")
 		return err
