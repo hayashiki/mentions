@@ -31,3 +31,7 @@ func (t *Task) GetUserByGithubID(githubID string) (*User, bool) {
 
 	return user, found
 }
+
+func (t *Task) SetUsers(users []*User) {
+	t.Users = users
+}

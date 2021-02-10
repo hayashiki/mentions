@@ -31,7 +31,7 @@ func (uc *userList) Do(ctx context.Context, input UserCreateInput) error {
 	if err != nil {
 		return fmt.Errorf("fail to get team, err=%v", err)
 	}
-	uc.userRepo.List(ctx, team, "", 100)
+	uc.userRepo.List(ctx, team.ID, "", 100)
 
 	return err
 }

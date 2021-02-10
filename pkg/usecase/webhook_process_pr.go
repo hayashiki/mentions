@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/go-github/github"
 	"github.com/hayashiki/mentions/pkg/event"
-	"github.com/hayashiki/mentions/pkg/mem"
+	"github.com/hayashiki/mentions/pkg/memcache"
 	"github.com/hayashiki/mentions/pkg/slack"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,13 +12,13 @@ import (
 func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent *github.PullRequestReviewCommentEvent) error {
 	ev := event.NewPullRequestCommentEvent(ghEvent)
 
-	conf := mem.NewConfig(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
-	mem, quit := mem.NewCommentCache(conf)
+	conf := memcache.NewClient(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
+	mem, quit := memcache.NewCommentCache(conf)
 	defer quit()
 
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent 
 		}
 
 		slackSvc := slack.NewClient(slack.New(task.Team.Token))
-		users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+		users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 		if err != nil {
 			return err
 		}

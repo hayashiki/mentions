@@ -11,11 +11,11 @@ import (
 
 //go:generate mockgen -source user_repository.go -destination mock_repo/user_repository.go
 type UserRepository interface {
-	List(ctx context.Context, team *model.Team, cursor string, limit int) ([]*model.User, string, error)
-	Put(ctx context.Context, team *model.Team, user *model.User) error
+	List(ctx context.Context, teamID string, cursor string, limit int) ([]*model.User, string, error)
+	Put(ctx context.Context, teamID string, user *model.User) error
 	FindByGithubID(ctx context.Context, githubID string) (*model.User, error)
 	FindBySlackID(ctx context.Context, githubID string) (*model.User, error)
-	Delete(ctx context.Context, team *model.Team, id string) error
+	Delete(ctx context.Context, teamID string, id string) error
 }
 
 type userRepository struct {
@@ -26,16 +26,16 @@ func NewUserRepository(client *datastore.Client) UserRepository {
 	return &userRepository{dsClient: client}
 }
 
-func (r *userRepository) key(id string, t *model.Team) *datastore.Key {
-	return datastore.NameKey(model.UserKind, id, r.parentKey(t))
+func (r *userRepository) key(id string, teamID string) *datastore.Key {
+	return datastore.NameKey(model.UserKind, id, r.parentKey(teamID))
 }
 
-func (r *userRepository) parentKey(t *model.Team) *datastore.Key {
-	return datastore.NameKey(model.TeamKind, t.ID, nil)
+func (r *userRepository) parentKey(teamID string) *datastore.Key {
+	return datastore.NameKey(model.TeamKind, teamID, nil)
 }
 
-func (r *userRepository) List(ctx context.Context, team *model.Team, cursor string, limit int) ([]*model.User, string, error) {
-	q := datastore.NewQuery(model.UserKind).Ancestor(r.parentKey(team))
+func (r *userRepository) List(ctx context.Context, teamID string, cursor string, limit int) ([]*model.User, string, error) {
+	q := datastore.NewQuery(model.UserKind).Ancestor(r.parentKey(teamID))
 	if cursor != "" {
 		dsCursor, err := datastore.DecodeCursor(cursor)
 		if err != nil {
@@ -69,9 +69,9 @@ type Reviewer struct {
 	SlackID string
 }
 
-func (r *userRepository) Get(ctx context.Context, team *model.Team, id string) (*model.User, error) {
+func (r *userRepository) Get(ctx context.Context, teamID string, id string) (*model.User, error) {
 	dst := &model.User{}
-	err := r.dsClient.Get(ctx, r.key(id, team), dst)
+	err := r.dsClient.Get(ctx, r.key(id, teamID), dst)
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +118,14 @@ func (r *userRepository) FindBySlackID(ctx context.Context, slackID string) (*mo
 	return &user, nil
 }
 
-func (r *userRepository) Put(ctx context.Context, team *model.Team, user *model.User) error {
-	_, err := r.dsClient.Put(ctx, r.key(user.ID, team), user)
+func (r *userRepository) Put(ctx context.Context, teamID string, user *model.User) error {
+	_, err := r.dsClient.Put(ctx, r.key(user.ID, teamID), user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, team *model.Team, id string) error {
-	return r.dsClient.Delete(ctx, r.key(id, team))
+func (r *userRepository) Delete(ctx context.Context, teamID string, id string) error {
+	return r.dsClient.Delete(ctx, r.key(id, teamID))
 }

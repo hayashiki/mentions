@@ -9,14 +9,7 @@ import (
 	"strings"
 )
 
-//type key int
-//
-//var (
-//	UserIDKey key
-////	UserIDKey
-//)
-
-//// ContextKey represents a context key
+// ContextKey represents a context key
 type ContextKey string
 
 const (

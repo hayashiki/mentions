@@ -69,7 +69,7 @@ func (uc *userAuth) Do(ctx context.Context, i UserAuthInput) (token string, err 
 	}
 
 	// TODO: ErrNoSuchEntity設定する。もどる可能性があるので。
-	err = uc.userRepo.Put(ctx, team, user)
+	err = uc.userRepo.Put(ctx, team.ID, user)
 	if err != nil {
 		return "", err
 	}

@@ -1,12 +1,9 @@
 package usecase
 
 import (
-	"context"
 	"github.com/google/go-github/github"
 	"github.com/hayashiki/mentions/pkg/config"
-	"github.com/hayashiki/mentions/pkg/event"
 	ghSvc "github.com/hayashiki/mentions/pkg/github"
-	"github.com/hayashiki/mentions/pkg/model"
 	"github.com/hayashiki/mentions/pkg/repository"
 	"log"
 	"net/http"
@@ -73,7 +70,7 @@ func (w webhookProcess) Do(r *http.Request) error {
 		log.Printf("action is %v", ev.GetAction())
 		switch ev.GetAction() {
 		case "added":
-			return w.processInstallationRepositoriesEvent(r.Context(), ev)
+			return w.processInstallationReposAddedEvent(r.Context(), ev)
 		case "removed":
 			return w.processInstallationReposRemovedEvent(r.Context(), ev)
 		}
@@ -87,38 +84,4 @@ func (w webhookProcess) Do(r *http.Request) error {
 
 func hasReviewMagicWord(s string) bool {
 	return string([]rune(s)[:2]) == "r?"
-}
-
-func (w *webhookProcess) processInstallationRepositoriesEvent(ctx context.Context, ghEvent *github.InstallationRepositoriesEvent) error {
-	log.Printf("added repo event called")
-	repos := event.NewInstallationRepositoriesEvent(ghEvent)
-	// TODO addedByがほしい
-	for _, repo := range repos {
-		err := w.repoRepo.Put(ctx, &model.Repo{
-			ID:       repo.ID,
-			Owner:    repo.Owner,
-			Name:     repo.Name,
-			FullName: repo.FullName,
-		})
-		if err != nil {
-			log.Printf("error is err: %v", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func (w *webhookProcess) processInstallationReposRemovedEvent(ctx context.Context, ghEvent *github.InstallationRepositoriesEvent) error {
-	log.Printf("delete repo event called")
-	repos := event.NewDeleteRepos(ghEvent)
-	// TODO addedByがほしい
-	for _, repo := range repos {
-		log.Printf("repo.ID: %v", repo.ID)
-		err := w.repoRepo.Delete(ctx, repo.ID)
-		if err != nil {
-			log.Printf("error is err: %v", err)
-			return err
-		}
-	}
-	return nil
 }

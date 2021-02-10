@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/hayashiki/mentions/pkg/event"
 	ghSvc "github.com/hayashiki/mentions/pkg/github"
-	"github.com/hayashiki/mentions/pkg/mem"
+	"github.com/hayashiki/mentions/pkg/memcache"
 	"github.com/hayashiki/mentions/pkg/model"
 	"github.com/hayashiki/mentions/pkg/slack"
 	log "github.com/sirupsen/logrus"
@@ -67,26 +67,22 @@ func (w *webhookProcess) editIssue(task *model.Task, ev *event.Event) error {
 
 func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *github.IssueCommentEvent) error {
 	log.Debug("called processEditIssueComment")
-	conf := mem.NewConfig(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
-	mem, quit := mem.NewCommentCache(conf)
-	defer quit()
-
 	ev := event.NewIssueComment(ghEvent)
+	conf := memcache.NewClient(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
+	mem, quit := memcache.NewCommentCache(conf)
+	defer quit()
 	slackMessageCache, err := mem.Get(ev.CommentCacheKey())
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
 	if err != nil {
+		log.WithError(err).Error("failed to get a task %v", ev.Repository.ID)
 		return err
 	}
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
-	if err != nil {
-		return err
-	}
-	task.Users = users
-
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
+	task.SetUsers(users)
 
 	payload := slack.ConvertPayload{
 		Comment:  ev.Comment,
@@ -125,8 +121,8 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *github.IssueCommentEvent) error {
 	log.Printf("Called.processCreateIssueComment")
 
-	conf := mem.NewConfig(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
-	mem, quit := mem.NewCommentCache(conf)
+	conf := memcache.NewClient(w.config.MemcachedServer, w.config.MemcachedUsername, w.config.MemcachedPassword)
+	mem, quit := memcache.NewCommentCache(conf)
 	defer quit()
 
 	//ghEvent.Installation.IDをつかってteamsを判定する
@@ -147,7 +143,7 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 	}
 	slackSvc = slack.NewClient(slack.New(task.Team.Token))
 
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return err
 	}
@@ -174,6 +170,8 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		log.Debug("Convert Comment")
 		slackMessageCache, err := mem.Get(ev.IssueCacheKey())
 
+		log.Debug("slackMessageCache %v", slackMessageCache)
+
 		// ヒットした場合 == スレッド表示したい
 		var ts string
 		if slackMessageCache != nil {
@@ -192,6 +190,7 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		})
 		// 最初の投稿の場合にキャッシュする
 		if ts == "" {
+			log.Debug("IssueCacheKey d %v", resp)
 			err = mem.Set(ev.IssueCacheKey(), resp)
 		}
 		if err := mem.Set(ev.CommentCacheKey(), resp); err != nil {
