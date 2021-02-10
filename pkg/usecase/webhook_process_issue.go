@@ -78,7 +78,7 @@ func (w *webhookProcess) processEditIssueComment(ctx context.Context, ghEvent *g
 		return err
 	}
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return fmt.Errorf("failed to get task %v", err)
 	}
@@ -143,7 +143,7 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 	}
 	slackSvc = slack.NewClient(slack.New(task.Team.Token))
 
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return err
 	}
@@ -170,6 +170,8 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		log.Debug("Convert Comment")
 		slackMessageCache, err := mem.Get(ev.IssueCacheKey())
 
+		log.Debug("slackMessageCache %v", slackMessageCache)
+
 		// ヒットした場合 == スレッド表示したい
 		var ts string
 		if slackMessageCache != nil {
@@ -188,6 +190,7 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		})
 		// 最初の投稿の場合にキャッシュする
 		if ts == "" {
+			log.Debug("IssueCacheKey d %v", resp)
 			err = mem.Set(ev.IssueCacheKey(), resp)
 		}
 		if err := mem.Set(ev.CommentCacheKey(), resp); err != nil {

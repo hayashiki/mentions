@@ -59,9 +59,13 @@ func (c *client) SetInterface(key string, val interface{}, exp uint32) (err erro
 }
 
 func (c *client) GetInterface(key string, i interface{}) (err error) {
-
 	val, _, _, err := c.memcached.Get(key)
 	if err != nil {
+		if err == mc.ErrNotFound {
+			log.Debug("not found")
+			return nil
+		}
+		log.Debugf("get cache err %v", err)
 		return err
 	}
 

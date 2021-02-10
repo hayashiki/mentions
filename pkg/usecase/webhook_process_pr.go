@@ -18,7 +18,7 @@ func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent 
 
 	task, err := w.taskRepo.Get(ctx, ev.Repository.ID)
 	slackSvc := slack.NewClient(slack.New(task.Team.Token))
-	users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+	users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (w *webhookProcess) processPullRequestComment(ctx context.Context, ghEvent 
 		}
 
 		slackSvc := slack.NewClient(slack.New(task.Team.Token))
-		users, _, err := w.userRepo.List(ctx, task.Team, "", 100)
+		users, _, err := w.userRepo.List(ctx, task.Team.ID, "", 100)
 		if err != nil {
 			return err
 		}

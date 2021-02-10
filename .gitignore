@@ -7,7 +7,6 @@
 *.test
 
 .env
-github-config.json
 cmd/seed/
 bkup.md
 

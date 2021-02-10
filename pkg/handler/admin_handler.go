@@ -58,7 +58,7 @@ func (a *App) ListUser(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	//TODO: cursorは一旦考えない
-	users, _, err := a.userRepo.List(r.Context(), team, "", 100)
+	users, _, err := a.userRepo.List(r.Context(), team.ID, "", 100)
 	if err != nil {
 		return fmt.Errorf("fail to get users, err=%v", err)
 	}
@@ -105,7 +105,7 @@ func (a *App) UpdateUser(w http.ResponseWriter, r *http.Request) error {
 	user.SetSlackID(req.SlackID)
 	user.SetGithubID(req.GithubID)
 
-	a.userRepo.Put(r.Context(), team, user)
+	a.userRepo.Put(r.Context(), team.ID, user)
 
 	return nil
 }

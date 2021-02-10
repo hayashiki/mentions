@@ -58,7 +58,7 @@ func (uc *userCreate) Do(ctx context.Context, input UserCreateInput) (*UserCreat
 
 	log.Printf("user %+v", user)
 
-	err = uc.userRepo.Put(ctx, team, user)
+	err = uc.userRepo.Put(ctx, team.ID, user)
 	if err != nil {
 		return nil, err
 	}

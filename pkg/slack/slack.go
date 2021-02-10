@@ -51,6 +51,7 @@ func (c *client) GetUsers() ([]*model.User, error) {
 
 	var users []*model.User
 	for _, user := range slackUsers {
+
 		if user.IsBot {
 			continue
 		}
@@ -60,9 +61,17 @@ func (c *client) GetUsers() ([]*model.User, error) {
 		if user.IsInvitedUser {
 			continue
 		}
+
+		name := user.Profile.DisplayName
+		if name == "" {
+			name = user.Name
+		}
+
+		//IsRestricted、IsAdmin、IsOwnerがほしい
+
 		users = append(users, &model.User{
 			ID:     user.ID,
-			Name:   user.Profile.DisplayName,
+			Name:   name,
 			Avatar: user.Profile.Image192,
 			TeamID: user.TeamID,
 		})
