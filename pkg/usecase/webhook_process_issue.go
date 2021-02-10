@@ -184,8 +184,8 @@ func (w *webhookProcess) processIssueComment(ctx context.Context, ghEvent *githu
 		}
 
 		log.WithFields(log.Fields{
-			"ts": ts,
-			"issueNumberKey": ev.IssueCacheKey(),
+			"ts":              ts,
+			"issueNumberKey":  ev.IssueCacheKey(),
 			"issueCommentKey": ev.CommentCacheKey(),
 		})
 		// 最初の投稿の場合にキャッシュする

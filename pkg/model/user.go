@@ -8,17 +8,21 @@ import (
 const UserKind = "users"
 
 type User struct {
-	ID        string    `json:"id" datastore:"id"`
-	Name      string    `json:"name" datastore:"name"`
-	Avatar    string    `json:"avatar" datastore:"avatar"`
-	Token     string    `json:"token" datastore:"token"`
-	SlackID   string    `json:"slackId" datastore:"slackId"`
-	GithubID  GithubID  `json:"githubId" datastore:"githubId"`
-	Reviewers Reviewers `json:"reviewers" datastore:"reviewers"`
-	GroupID   int64     `json:"groupId" datastore:"groupId"`
-	TeamID    string    `json:"teamId" datastore:"teamId"`
-	CreatedAt time.Time `datastore:"createdAt,noindex"`
-	UpdatedAt time.Time `datastore:"updatedAt,noindex"`
+	ID           string    `json:"id" datastore:"id"`
+	Name         string    `json:"name" datastore:"name"`
+	Email        string    `json:"email" datastore:"email"`
+	GoogleID     string    `json:"googleId" datastore:"googleId"`
+	Avatar       string    `json:"avatar" datastore:"avatar"`
+	Token        string    `json:"token" datastore:"token"`
+	SlackID      string    `json:"slackId" datastore:"slackId"`
+	SlackIsOwner string    `json:"slackIsOwner" datastore:"slackIsOwner"`
+	SlackIsAdmin string    `json:"slackIsAdmin" datastore:"slackIsAdmin"`
+	GithubID     GithubID  `json:"githubId" datastore:"githubId"`
+	Reviewers    Reviewers `json:"reviewers" datastore:"reviewers"`
+	GroupID      int64     `json:"groupId" datastore:"groupId"`
+	TeamID       string    `json:"teamId" datastore:"teamId"`
+	CreatedAt    time.Time `datastore:"createdAt,noindex"`
+	UpdatedAt    time.Time `datastore:"updatedAt,noindex"`
 }
 
 type UserID int64

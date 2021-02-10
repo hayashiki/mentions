@@ -25,7 +25,7 @@ var (
 
 func (c *commentCache) Get(key string) (*slack.MessageResponse, error) {
 	var comment slack.MessageResponse
-	err :=  c.client.GetInterface(prefixKey+key, &comment)
+	err := c.client.GetInterface(prefixKey+key, &comment)
 	return &comment, err
 }
 

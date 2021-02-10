@@ -12,14 +12,14 @@ var lock sync.Mutex
 
 type client struct {
 	memcached *mc.Client
-	quit Quit
+	quit      Quit
 }
 
 type Quit func()
 
 type Item struct {
-	Key string
-	Value string
+	Key        string
+	Value      string
 	Expiration uint32
 }
 
@@ -27,7 +27,6 @@ func NewClient(server, username, password string) *client {
 	mc := mc.NewMC(server, username, password)
 	return &client{memcached: mc, quit: mc.Quit}
 }
-
 
 func (c *client) Get(key string) (val string, err error) {
 	value, _, _, err := c.memcached.Get(key)
