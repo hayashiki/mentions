@@ -13,6 +13,7 @@ import (
 type UserRepository interface {
 	List(ctx context.Context, teamID string, cursor string, limit int) ([]*model.User, string, error)
 	Put(ctx context.Context, teamID string, user *model.User) error
+	Get(ctx context.Context, teamID string, id string) (*model.User, error)
 	FindByGithubID(ctx context.Context, githubID string) (*model.User, error)
 	FindBySlackID(ctx context.Context, githubID string) (*model.User, error)
 	Delete(ctx context.Context, teamID string, id string) error
