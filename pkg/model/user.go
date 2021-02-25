@@ -29,6 +29,8 @@ type UserID int64
 
 type GithubID string
 
+func (User) IsNode() {}
+
 func (g GithubID) String() string {
 	return string(g)
 }
