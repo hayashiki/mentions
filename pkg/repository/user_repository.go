@@ -15,7 +15,7 @@ type UserRepository interface {
 	Put(ctx context.Context, teamID int64, user *model.User) error
 	Get(ctx context.Context, teamID int64, id int64) (*model.User, error)
 	FindByGithubID(ctx context.Context, githubID string) (*model.User, error)
-	FindBySlackID(ctx context.Context, githubID string) (*model.User, error)
+	FindBySlackID(ctx context.Context, slackID string) (*model.User, error)
 	Delete(ctx context.Context, teamID int64, id int64) error
 }
 
@@ -84,7 +84,7 @@ func (r *userRepository) Get(ctx context.Context, teamID int64, id int64) (*mode
 }
 
 func (r *userRepository) FindByGithubID(ctx context.Context, githubID string) (*model.User, error) {
-	q := datastore.NewQuery(model.UserKind).KeysOnly().Filter("GithubID =", githubID).Limit(1)
+	q := datastore.NewQuery(model.UserKind).KeysOnly().Filter("githubId =", githubID).Limit(1)
 
 	keys, err := r.dsClient.GetAll(context.Background(), q, nil)
 
@@ -104,7 +104,7 @@ func (r *userRepository) FindByGithubID(ctx context.Context, githubID string) (*
 }
 
 func (r *userRepository) FindBySlackID(ctx context.Context, slackID string) (*model.User, error) {
-	q := datastore.NewQuery(model.UserKind).KeysOnly().Filter("GithubID =", slackID).Limit(1)
+	q := datastore.NewQuery(model.UserKind).KeysOnly().Filter("slackId =", slackID).Limit(1)
 
 	keys, err := r.dsClient.GetAll(ctx, q, nil)
 
