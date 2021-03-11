@@ -124,7 +124,8 @@ func (r *userRepository) FindBySlackID(ctx context.Context, slackID string) (*mo
 }
 
 func (r *userRepository) Put(ctx context.Context, teamID int64, user *model.User) error {
-	_, err := r.dsClient.Put(ctx, r.key(user.ID, teamID), user)
+	key, err := r.dsClient.Put(ctx, r.key(user.ID, teamID), user)
+	user.ID = key.ID
 	if err != nil {
 		return err
 	}

@@ -72,7 +72,8 @@ func (r *teamRepository) GetBySlackTeamID(ctx context.Context, slackTeamID strin
 }
 
 func (r *teamRepository) Put(ctx context.Context, team *model.Team) error {
-	_, err := r.dsClient.Put(ctx, r.generateKey(), team)
+	key, err := r.dsClient.Put(ctx, r.generateKey(), team)
+	team.ID = key.ID
 	if err != nil {
 		return err
 	}
