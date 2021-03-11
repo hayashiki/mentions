@@ -5,14 +5,15 @@ import "log"
 const TaskKind = "tasks"
 
 type Task struct {
-	ID             int64 // github repositoryID
+	ID             int64  `json:"id" datastore:"id"`
 	Repo           Repo
+	RepoID         int64 `json:"repoId" datastore:"repoId"`
 	Channel        string `json:"channel" datastore:"channel"`
 	Users          []*User
 	UserIDs        []string
 	TeamID         string `json:"teamId" datastore:"teamId"`
 	Team           *Team
-	InstallationID int64 `json:"id" datastore:"installationId"`
+	InstallationID int64 `json:"installationId" datastore:"installationId"`
 }
 
 func (Task) IsNode() {}
