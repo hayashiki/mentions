@@ -7,10 +7,11 @@ import (
 const TeamKind = "teams"
 
 type Team struct {
-	ID    string `json:"id" datastore:"id"`
-	Name  string `json:"name" datastore:"name"`
-	Token string `json:"token" datastore:"token"`
-	Tasks []Task
+	ID          int64  `json:"id" datastore:"id"`
+	SlackTeamID int64  `json:"slackTeamId" datastore:"slackTeamId"`
+	Name        string `json:"name" datastore:"name"`
+	Token       string `json:"token" datastore:"token"`
+	Tasks       []Task
 	// TODO: Authorized github organizations がほしい
 	CreatedAt time.Time `datastore:"createdAt,noindex"`
 	UpdatedAt time.Time `datastore:"updatedAt,noindex"`

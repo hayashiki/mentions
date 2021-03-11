@@ -5,9 +5,9 @@ import "log"
 const TaskKind = "tasks"
 
 type Task struct {
-	ID             int64  `json:"id" datastore:"id"`
+	ID             int64 `json:"id" datastore:"id"`
 	Repo           Repo
-	RepoID         int64 `json:"repoId" datastore:"repoId"`
+	RepoID         int64  `json:"repoId" datastore:"repoId"`
 	Channel        string `json:"channel" datastore:"channel"`
 	Users          []*User
 	UserIDs        []string

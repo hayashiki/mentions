@@ -23,10 +23,11 @@ func NewUserCreate(teamRepo repository.TeamRepository, userRepo repository.UserR
 }
 
 type UserCreateInput struct {
-	TeamID   string
-	UserID   string
-	GithubID string
-	SlackID  string
+	SlackTeamID string
+	TeamID      int64
+	UserID      string
+	GithubID    string
+	SlackID     string
 }
 
 type UserCreateOutput struct {
@@ -47,7 +48,7 @@ func (uc *userCreate) Do(ctx context.Context, input UserCreateInput) (*UserCreat
 	slackUser, err := slackSvc.GetUser(input.SlackID)
 
 	user := &model.User{
-		ID:        input.SlackID,
+		//ID:        input.SlackID,
 		SlackID:   input.SlackID,
 		GithubID:  model.GithubID(input.GithubID),
 		Name:      slackUser.Name,

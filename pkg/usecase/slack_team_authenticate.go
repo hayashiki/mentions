@@ -39,7 +39,7 @@ func (uc *authUsecase) Do(ctx context.Context, i *AuthInput) error {
 	}
 
 	team := &model.Team{
-		ID:        authResp.Team.ID,
+		//ID:        authResp.Team.ID,
 		Name:      authResp.Team.Name,
 		Token:     authResp.AccessToken,
 		CreatedAt: time.Now(),

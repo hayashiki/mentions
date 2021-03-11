@@ -233,10 +233,10 @@ func (a *App) CreateUser(w http.ResponseWriter, r *http.Request) error {
 
 	userCreate := usecase.NewUserCreate(a.teamRepo, a.userRepo)
 	input := usecase.UserCreateInput{
-		TeamID:   u.TeamID,
-		UserID:   req.SlackID,
-		GithubID: req.GithubID,
-		SlackID:  req.SlackID,
+		SlackTeamID: u.TeamID,
+		UserID:      req.SlackID,
+		GithubID:    req.GithubID,
+		SlackID:     req.SlackID,
 	}
 
 	if user, err := userCreate.Do(r.Context(), input); err != nil {

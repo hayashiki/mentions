@@ -70,10 +70,10 @@ func (c *client) GetUsers() ([]*model.User, error) {
 		//IsRestricted、IsAdmin、IsOwnerがほしい
 
 		users = append(users, &model.User{
-			ID:     user.ID,
-			Name:   name,
-			Avatar: user.Profile.Image192,
-			TeamID: user.TeamID,
+			SlackID: user.ID,
+			Name:    name,
+			Avatar:  user.Profile.Image192,
+			TeamID:  user.TeamID,
 		})
 	}
 
@@ -87,9 +87,9 @@ func (c *client) GetUser(id string) (*model.User, error) {
 	}
 
 	return &model.User{
-		ID:     user.ID,
-		Name:   user.Profile.DisplayName,
-		Avatar: user.Profile.Image192,
+		SlackID: user.ID,
+		Name:    user.Profile.DisplayName,
+		Avatar:  user.Profile.Image192,
 	}, nil
 }
 

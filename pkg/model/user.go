@@ -8,7 +8,7 @@ import (
 const UserKind = "users"
 
 type User struct {
-	ID           string    `json:"id" datastore:"id"`
+	ID           int64     `json:"id" datastore:"id"`
 	Name         string    `json:"name" datastore:"name"`
 	Email        string    `json:"email" datastore:"email"`
 	GoogleID     string    `json:"googleId" datastore:"googleId"`

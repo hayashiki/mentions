@@ -45,7 +45,7 @@ func (uc *userAuth) Do(ctx context.Context, i UserAuthInput) (token string, err 
 	}
 
 	log.Printf("authResp.Team.ID is %+v", authResp.Team.ID)
-	team, err := uc.teamRepo.Get(ctx, authResp.Team.ID)
+	team, err := uc.teamRepo.GetBySlackTeamID(ctx, authResp.Team.ID)
 	if err != nil {
 		log.Printf("err %v", err)
 		//return err
@@ -59,8 +59,8 @@ func (uc *userAuth) Do(ctx context.Context, i UserAuthInput) (token string, err 
 	}
 
 	user := &model.User{
-		Token:     authResp.AuthedUser.AccessToken,
-		ID:        authResp.AuthedUser.ID,
+		Token: authResp.AuthedUser.AccessToken,
+		//ID:        authResp.AuthedUser.ID,
 		SlackID:   authResp.AuthedUser.ID,
 		Name:      slackUser.Name,
 		Avatar:    slackUser.Avatar,

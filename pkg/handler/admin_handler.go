@@ -23,7 +23,7 @@ func (a *App) currentUser(ctx context.Context) *User {
 func (a *App) ListSlackAPIUser(w http.ResponseWriter, r *http.Request) error {
 
 	u := a.currentUser(r.Context())
-	team, err := a.teamRepo.Get(r.Context(), u.TeamID)
+	team, err := a.teamRepo.GetBySlackTeamID(r.Context(), u.TeamID)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ type listResp struct {
 func (a *App) ListUser(w http.ResponseWriter, r *http.Request) error {
 	u := a.currentUser(r.Context())
 
-	team, err := a.teamRepo.Get(r.Context(), u.TeamID)
+	team, err := a.teamRepo.GetBySlackTeamID(r.Context(), u.TeamID)
 	if err != nil {
 		return fmt.Errorf("fail to get team, err=%v", err)
 	}
@@ -96,7 +96,7 @@ func (a *App) UpdateUser(w http.ResponseWriter, r *http.Request) error {
 
 	u := a.currentUser(r.Context())
 
-	team, err := a.teamRepo.Get(r.Context(), u.TeamID)
+	team, err := a.teamRepo.GetBySlackTeamID(r.Context(), u.TeamID)
 
 	user, err := a.userRepo.FindBySlackID(r.Context(), id)
 	if err != nil {
