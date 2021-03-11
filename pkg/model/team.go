@@ -8,7 +8,7 @@ const TeamKind = "teams"
 
 type Team struct {
 	ID          int64  `json:"id" datastore:"id"`
-	SlackTeamID int64  `json:"slackTeamId" datastore:"slackTeamId"`
+	SlackTeamID string  `json:"slackTeamId" datastore:"slackTeamId"`
 	Name        string `json:"name" datastore:"name"`
 	Token       string `json:"token" datastore:"token"`
 	Tasks       []Task
