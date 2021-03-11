@@ -15,6 +15,8 @@ type Task struct {
 	InstallationID int64 `json:"id" datastore:"installationId"`
 }
 
+func (Task) IsNode() {}
+
 func (t *Task) GetUserByGithubID(githubID string) (*User, bool) {
 
 	found := false

@@ -11,3 +11,5 @@ type Installation struct {
 	CreatedAt time.Time `datastore:"createdAt,noindex"`
 	UpdatedAt time.Time `datastore:"updatedAt,noindex"`
 }
+
+func (Installation) IsNode() {}

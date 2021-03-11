@@ -11,3 +11,5 @@ type Group struct {
 	CreatedAt time.Time `datastore:"createdAt,noindex"`
 	UpdatedAt time.Time `datastore:"updatedAt,noindex"`
 }
+
+func (Group) IsNode() {}
